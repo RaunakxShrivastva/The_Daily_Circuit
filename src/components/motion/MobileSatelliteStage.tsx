@@ -97,38 +97,46 @@ export function MobileSatelliteStage() {
 
   return (
     <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex items-center select-none font-mono">
-      {/* Collapsed Docked Tab (Always visible on screen edge without covering text) */}
+      {/* Collapsed Docked Tab (Strictly Vertical Strip hugging the right screen edge with zero overlap) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group flex items-center gap-2.5 bg-[#14120e] hover:bg-[#1f1b14] text-amber-400 border-y border-l border-[#3a3429] px-3.5 py-3 rounded-l-2xl shadow-[-6px_8px_24px_rgba(0,0,0,0.6)] transition-all duration-200 hover:-translate-x-1"
-          title="Open Mobile Audio Companion"
+          className="group flex flex-col items-center justify-between w-[32px] py-4 bg-[#14120e] hover:bg-[#201c15] text-amber-400 border-y border-l border-[#3a3429] rounded-l-xl shadow-[-4px_6px_20px_rgba(0,0,0,0.6)] transition-all duration-200 hover:-translate-x-1 cursor-pointer select-none"
+          title="Open 60s Audio Companion"
         >
-          <div className="flex flex-col items-center">
-            <div className="relative">
-              <Mic size={16} className="text-amber-400 group-hover:scale-110 transition-transform" />
-              {isPlaying && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              )}
-            </div>
-            <span className="text-[7.5px] uppercase tracking-wider text-neutral-400 mt-1 font-bold">
-              AUDIO
-            </span>
+          {/* Top Mic Icon + Status Indicator */}
+          <div className="relative flex flex-col items-center">
+            <Mic size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
+            <span
+              className={`w-1.5 h-1.5 rounded-full mt-1.5 ${
+                isPlaying ? 'bg-emerald-400 animate-ping' : 'bg-amber-500'
+              }`}
+            />
           </div>
 
-          <div className="hidden sm:flex flex-col text-left border-l border-white/10 pl-2.5">
-            <div className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${isPlaying ? 'bg-emerald-400 animate-pulse' : 'bg-amber-500'}`} />
-              <span className="text-[9px] font-bold text-neutral-200">
-                {isPlaying ? `Playing (${formatSec(currentTime)})` : '60s Audio Brief'}
-              </span>
-            </div>
-            <span className="text-[8px] text-amber-400/90 font-serif italic">
-              {isPlaying ? 'Broadcasting live voice...' : '06:00 IST Edition · Listen'}
-            </span>
+          {/* Vertical Text rotated for vertical reading */}
+          <div 
+            className="my-3 text-[9px] font-mono font-bold tracking-widest text-neutral-300 group-hover:text-amber-300 uppercase whitespace-nowrap"
+            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+          >
+            {isPlaying ? `● PLAYING ${formatSec(currentTime)}` : 'AUDIO · 60S BRIEF'}
           </div>
 
-          <ChevronRight size={14} className="text-neutral-500 group-hover:text-amber-300 transition-colors" />
+          {/* Mini Waveform & Chevron */}
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-0.5 h-3">
+              {[6, 12, 8].map((h, i) => (
+                <span
+                  key={i}
+                  className={`w-0.5 rounded-full transition-all duration-100 ${
+                    isPlaying ? 'bg-emerald-400' : 'bg-neutral-600'
+                  }`}
+                  style={{ height: isPlaying ? `${h}px` : '3px' }}
+                />
+              ))}
+            </div>
+            <ChevronRight size={12} className="text-neutral-500 group-hover:text-amber-400 rotate-180" />
+          </div>
         </button>
       )}
 
