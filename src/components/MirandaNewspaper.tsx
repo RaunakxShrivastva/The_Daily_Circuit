@@ -438,13 +438,8 @@ export function MirandaNewspaper() {
         ))}
       </aside>
 
-      {/* Floating Stageshow Mobile Companion Satellite on the right margin (wide screens) */}
-      <aside 
-        className="hidden 2xl:block fixed right-6 top-1/2 -translate-y-1/2 z-40 transition-transform duration-300 hover:scale-[1.02]"
-        aria-label="Mobile Companion Satellite"
-      >
-        <MobileSatelliteStage />
-      </aside>
+      {/* Docked Stageshow Mobile Companion Audio Satellite (Collapsible on the right margin) */}
+      <MobileSatelliteStage />
 
       {/* Main Printed Broadsheet Container */}
       <main className="miranda-sheet">

@@ -4,7 +4,7 @@ import { MirandaNewspaper } from "./components/MirandaNewspaper";
 import { Sparkles, Layers } from "lucide-react";
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<"3d" | "miranda">("3d");
+  const [viewMode, setViewMode] = useState<"3d" | "miranda">("miranda");
 
   return (
     <div
