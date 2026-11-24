@@ -8,19 +8,20 @@ export default function App() {
 
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
-      {/* Top Floating View Switcher Pill */}
+      {/* Top Centered Floating View Switcher Pill */}
       <div 
         style={{
           position: "fixed",
-          top: 10,
-          right: 20,
+          top: 8,
+          left: "50%",
+          transform: "translateX(-50%)",
           zIndex: 9999,
           display: "flex",
           gap: 6,
           background: "rgba(18, 16, 13, 0.94)",
           backdropFilter: "blur(16px)",
           border: "1px solid rgba(255, 255, 255, 0.16)",
-          padding: "5px 8px",
+          padding: "4px 6px",
           borderRadius: 30,
           boxShadow: "0 12px 36px rgba(0,0,0,0.75)"
         }}
