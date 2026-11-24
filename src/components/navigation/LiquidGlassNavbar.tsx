@@ -117,6 +117,26 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
             <Layers size={11} className={viewMode === "miranda" ? "text-amber-300" : ""} />
             <span>Miranda Editorial</span>
           </button>
+
+          <button
+            onClick={() => {
+              if (viewMode !== "miranda") {
+                onViewChange("miranda");
+                setTimeout(() => {
+                  const el = document.getElementById("home-stage");
+                  el?.scrollIntoView({ behavior: "smooth" });
+                }, 120);
+              } else {
+                const el = document.getElementById("home-stage");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-neutral-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+            title="Scroll to full-screen Home Garden space"
+          >
+            <Compass size={11} className="text-emerald-400" />
+            <span className="hidden sm:inline">Home Space</span>
+          </button>
         </div>
 
         {/* Right Section: 60s Voice Brief & Reading Progress */}

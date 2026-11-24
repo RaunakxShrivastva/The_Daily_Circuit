@@ -42,6 +42,7 @@ import { PromptDuelStage } from './motion/PromptDuelStage';
 import { MobileSatelliteStage } from './motion/MobileSatelliteStage';
 import { SiliconExplorerStage } from './motion/SiliconExplorerStage';
 import { TelegraphTicker } from './motion/TelegraphTicker';
+import { HomePageStage } from './home/HomePageStage';
 
 const PAGE_SECTIONS = [
   { id: 'page-01', num: '01', roman: 'I', label: 'Front Page & Wire', short: 'Front Wire', edge: 'PAGE 01 · WIRE' },
@@ -1335,6 +1336,9 @@ export function MirandaNewspaper() {
           </div>
         </footer>
       </main>
+
+      {/* Full-Screen Home Page Stage on Impressionist Garden Background */}
+      <HomePageStage onScrollToNewspaper={() => scrollToSection('page-01')} />
 
       {/* Full-Screen Interactive Story Reader (When clicking any article) */}
       {readingStory && (
