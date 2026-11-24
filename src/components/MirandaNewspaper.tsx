@@ -443,6 +443,15 @@ export function MirandaNewspaper() {
 
       {/* Main Printed Broadsheet Container */}
       <main className="miranda-sheet">
+        {/* Glowing Copper PCB Reading Spine on the left paper edge */}
+        <div 
+          className="hidden xl:block absolute left-0 top-0 bottom-0 w-[3px] pointer-events-none rounded-l-sm"
+          style={{
+            background: "linear-gradient(to bottom, #d97706 0%, #ef4444 35%, #f59e0b 70%, #b45309 100%)",
+            boxShadow: "0 0 12px rgba(245, 158, 11, 0.55)"
+          }}
+          aria-hidden="true"
+        />
         {/* Top Paper Header & Stamp */}
         <div className="miranda-sheet__stamp-row">
           <div className="miranda-circular-stamp">

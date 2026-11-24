@@ -1,10 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiniteBroadsheet } from "./components/FiniteBroadsheet";
 import { MirandaNewspaper } from "./components/MirandaNewspaper";
-import { Sparkles, Layers } from "lucide-react";
+import { LiquidGlassNavbar } from "./components/navigation/LiquidGlassNavbar";
+import { CinematicIntroOverlay } from "./components/motion/CinematicIntroOverlay";
 
 export default function App() {
   const [viewMode, setViewMode] = useState<"3d" | "miranda">("miranda");
+  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
+
+  // Interactive ambient desk spotlight tracking mouse
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMove, { passive: true });
+    return () => window.removeEventListener("mousemove", handleMove);
+  }, []);
 
   return (
     <div
@@ -15,76 +26,27 @@ export default function App() {
         minHeight: "100vh",
         overflowX: "hidden",
         overflowY: viewMode === "miranda" ? "auto" : "hidden",
+        backgroundColor: "#0d0b09",
       }}
     >
-      {/* Top Centered Floating View Switcher Pill */}
+      {/* Cinematic Linotype Stamp Awakening on Initial Landing */}
+      <CinematicIntroOverlay />
+
+      {/* Interactive Ambient Desk Lamp (Follows mouse behind paper with warm gold glow) */}
       <div 
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
         style={{
-          position: "fixed",
-          top: 8,
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 9999,
-          display: "flex",
-          gap: 6,
-          background: "rgba(18, 16, 13, 0.94)",
-          backdropFilter: "blur(16px)",
-          border: "1px solid rgba(255, 255, 255, 0.16)",
-          padding: "4px 6px",
-          borderRadius: 30,
-          boxShadow: "0 12px 36px rgba(0,0,0,0.75)"
+          background: `radial-gradient(750px circle at ${mousePos.x}px ${mousePos.y}px, rgba(235, 175, 95, 0.055), transparent 75%)`,
         }}
-      >
-        <button
-          onClick={() => setViewMode("3d")}
-          style={{
-            fontFamily: "var(--mono)",
-            fontSize: 10.5,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 15px",
-            borderRadius: 20,
-            background: viewMode === "3d" ? "#c83e2b" : "transparent",
-            color: viewMode === "3d" ? "#ffffff" : "rgba(255,255,255,0.75)",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: 700,
-            transition: "all 160ms ease"
-          }}
-          title="3D tactile 8-page broadsheet with realistic 3D flip animation"
-        >
-          <Sparkles size={12} /> 3D Broadsheet
-        </button>
+      />
 
-        <button
-          onClick={() => setViewMode("miranda")}
-          style={{
-            fontFamily: "var(--mono)",
-            fontSize: 10.5,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 15px",
-            borderRadius: 20,
-            background: viewMode === "miranda" ? "#c83e2b" : "transparent",
-            color: viewMode === "miranda" ? "#ffffff" : "rgba(255,255,255,0.75)",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: 700,
-            transition: "all 160ms ease"
-          }}
-          title="Awwwards-style Miranda scrollytelling editorial"
-        >
-          <Layers size={12} /> Miranda Editorial
-        </button>
+      {/* Apple Liquid Glass Floating Capsule Navbar */}
+      <LiquidGlassNavbar viewMode={viewMode} onViewChange={setViewMode} />
+
+      {/* Main Experience View */}
+      <div className="relative z-10 pt-10 sm:pt-12">
+        {viewMode === "3d" ? <FiniteBroadsheet /> : <MirandaNewspaper />}
       </div>
-
-      {viewMode === "3d" ? <FiniteBroadsheet /> : <MirandaNewspaper />}
     </div>
   );
 }
