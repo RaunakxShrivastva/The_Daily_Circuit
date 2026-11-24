@@ -43,6 +43,7 @@ import { MobileSatelliteStage } from './motion/MobileSatelliteStage';
 import { SiliconExplorerStage } from './motion/SiliconExplorerStage';
 import { TelegraphTicker } from './motion/TelegraphTicker';
 import { HomePageStage } from './home/HomePageStage';
+import { ScrollCircuitPath } from './motion/ScrollCircuitPath';
 
 const PAGE_SECTIONS = [
   { id: 'page-01', num: '01', roman: 'I', label: 'Front Page & Wire', short: 'Front Wire', edge: 'PAGE 01 · WIRE' },
@@ -401,6 +402,9 @@ export function MirandaNewspaper() {
           document.querySelector('.miranda-sheet')?.scrollIntoView({ behavior: 'smooth' });
         }} 
       />
+
+      {/* Real-time Smooth Scroll SVG Circuit Path Draw Animation */}
+      <ScrollCircuitPath />
 
       {/* Floating Outside-Paper Page Rail (Sticky Page Markers - Only visible when reading newspaper) */}
       <aside 
