@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Radio, Zap } from "lucide-react";
 
 interface CinematicIntroOverlayProps {
@@ -7,48 +7,48 @@ interface CinematicIntroOverlayProps {
 
 export function CinematicIntroOverlay({ onComplete }: CinematicIntroOverlayProps) {
   const [phase, setPhase] = useState<"idle" | "hands" | "trace" | "stamp" | "unveil" | "done">("idle");
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const finishIntro = useCallback(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    setPhase("done");
+    if (onComplete) onComplete();
+  }, [onComplete]);
 
   useEffect(() => {
     // Stage 1: Artwork hands and constellation illuminate softly (150ms)
-    const t1 = setTimeout(() => setPhase("hands"), 150);
+    timersRef.current.push(setTimeout(() => setPhase("hands"), 150));
     // Stage 2: Electric synapse spark bridges the fingertips (1100ms)
-    const t2 = setTimeout(() => setPhase("trace"), 1100);
+    timersRef.current.push(setTimeout(() => setPhase("trace"), 1100));
     // Stage 3: Heavy Linotype letterpress punch down (2300ms)
-    const t3 = setTimeout(() => setPhase("stamp"), 2300);
+    timersRef.current.push(setTimeout(() => setPhase("stamp"), 2300));
     // Stage 4: Overlay dissolves smoothly into the live newspaper (4000ms)
-    const t4 = setTimeout(() => setPhase("unveil"), 4000);
+    timersRef.current.push(setTimeout(() => setPhase("unveil"), 4000));
     // Stage 5: Unmount completely (4700ms)
-    const t5 = setTimeout(() => {
-      setPhase("done");
-      if (onComplete) onComplete();
-    }, 4700);
+    timersRef.current.push(setTimeout(() => {
+      finishIntro();
+    }, 4700));
 
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setPhase("done");
-        if (onComplete) onComplete();
+        finishIntro();
       }
     };
     window.addEventListener("keydown", handleKey);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-      clearTimeout(t5);
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
       window.removeEventListener("keydown", handleKey);
     };
-  }, [onComplete]);
+  }, [finishIntro]);
 
   if (phase === "done") return null;
 
   return (
     <div
-      onClick={() => {
-        setPhase("done");
-        if (onComplete) onComplete();
-      }}
+      onClick={finishIntro}
       className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center select-none cursor-pointer font-mono transition-opacity duration-700 ${
         phase === "unveil" ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
@@ -145,8 +145,7 @@ export function CinematicIntroOverlay({ onComplete }: CinematicIntroOverlayProps
       <button
         onClick={(e) => {
           e.stopPropagation();
-          setPhase("done");
-          if (onComplete) onComplete();
+          finishIntro();
         }}
         className="absolute bottom-6 right-8 text-[9px] uppercase tracking-widest text-neutral-400 hover:text-white transition-colors border border-white/20 hover:border-amber-400 px-3.5 py-1.5 rounded-lg bg-black/60 backdrop-blur-sm"
       >
