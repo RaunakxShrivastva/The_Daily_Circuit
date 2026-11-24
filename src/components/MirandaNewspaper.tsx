@@ -36,6 +36,11 @@ import type { GithubRepo, LiveEditionData } from '../lib/api';
 import { fetchLiveEdition, liveDataToStories } from '../lib/api';
 import { EDITION as STATIC_EDITION } from '../data/edition';
 import { StoryReader } from './StoryReader';
+import { IncidentReplayStage } from './motion/IncidentReplayStage';
+import { GhostTerminalStage } from './motion/GhostTerminalStage';
+import { PromptDuelStage } from './motion/PromptDuelStage';
+import { MobileSatelliteStage } from './motion/MobileSatelliteStage';
+import { SiliconExplorerStage } from './motion/SiliconExplorerStage';
 
 const PAGE_SECTIONS = [
   { id: 'page-01', num: '01', roman: 'I', label: 'Front Page & Wire', short: 'Front Wire', edge: 'PAGE 01 · WIRE' },
@@ -433,6 +438,14 @@ export function MirandaNewspaper() {
         ))}
       </aside>
 
+      {/* Floating Stageshow Mobile Companion Satellite on the right margin (wide screens) */}
+      <aside 
+        className="hidden 2xl:block fixed right-6 top-1/2 -translate-y-1/2 z-40 transition-transform duration-300 hover:scale-[1.02]"
+        aria-label="Mobile Companion Satellite"
+      >
+        <MobileSatelliteStage />
+      </aside>
+
       {/* Main Printed Broadsheet Container */}
       <main className="miranda-sheet">
         {/* Top Paper Header & Stamp */}
@@ -794,6 +807,9 @@ export function MirandaNewspaper() {
               ))}
             </div>
           </div>
+
+          {/* Stageshow Faux UI: Live Prompt Duel Arena */}
+          <PromptDuelStage />
         </section>
 
         {/* ========================================================
@@ -818,6 +834,9 @@ export function MirandaNewspaper() {
             </div>
             <AlertTriangle size={22} className="text-red-600" />
           </div>
+
+          {/* Stageshow Faux UI: Living Incident Replay Engine */}
+          <IncidentReplayStage />
 
           {/* Lead Incident Teardown */}
           <article className="miranda-incident-lead">
@@ -1032,6 +1051,9 @@ export function MirandaNewspaper() {
                 </div>
               </div>
             </div>
+
+            {/* Stageshow Faux UI: The Ghost Terminal */}
+            <GhostTerminalStage />
           </div>
         </section>
 
@@ -1080,6 +1102,9 @@ export function MirandaNewspaper() {
               ))}
             </div>
           </div>
+
+          {/* Stageshow Faux UI: Interactive Die Explorer */}
+          <SiliconExplorerStage />
 
           {/* Hardware Specs Comparison Table */}
           <div className="miranda-table-container">
