@@ -1,0 +1,1121 @@
+/* =============================================================
+   THE DAILY CIRCUIT — MIRANDA EDITORIAL DESIGN SYSTEM
+   Award-Winning Newspaper Aesthetics · Monospaced Metadata · High-Contrast Serif
+   ============================================================= */
+
+:root {
+  --miranda-paper: #f7f3e8;
+  --miranda-paper-dark: #ede7d6;
+  --miranda-paper-light: #fcf9f2;
+  --miranda-ink: #11100e;
+  --miranda-ink-soft: #38352e;
+  --miranda-ink-faint: #787365;
+  --miranda-rule: #d5cbaf;
+  --miranda-rule-strong: #9e9375;
+  --miranda-blue: #162f58;
+  --miranda-blue-light: #234b8c;
+  --miranda-gold: #c29b38;
+
+  --serif-title: "Bodoni Moda", "Didot", "Times New Roman", serif;
+  --serif-body: "Newsreader", "Georgia", serif;
+  --mono-code: "IBM Plex Mono", monospace;
+}
+
+/* Base Canvas & Room */
+.miranda-canvas {
+  min-height: 100vh;
+  background-color: #0b0a08;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(180, 150, 110, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 50% 100%, rgba(10, 10, 10, 0.8) 0%, transparent 80%);
+  color: var(--miranda-ink);
+  font-family: var(--serif-body);
+  position: relative;
+  overflow-x: hidden;
+  padding: 40px 20px 80px;
+}
+
+/* Micro-Fiber Grain Overlay */
+.miranda-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Floating Magnetic Hover Card (Miranda Signature) */
+.miranda-hover-card {
+  position: fixed;
+  pointer-events: none;
+  z-index: 100;
+  width: 220px;
+  background: var(--miranda-paper);
+  border: 1px solid var(--miranda-ink);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.45);
+  padding: 8px;
+  transform: translate(-50%, -50%);
+  animation: hover-pop 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes hover-pop {
+  from { opacity: 0; transform: translate(-50%, -40%) scale(0.9); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.miranda-hover-card__img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  filter: grayscale(100%) contrast(1.2) sepia(20%);
+  border-bottom: 1px solid var(--miranda-rule);
+}
+
+.miranda-hover-card__meta {
+  padding-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.miranda-hover-card__kicker {
+  font-family: var(--mono-code);
+  font-size: 8.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--miranda-blue);
+  font-weight: 600;
+}
+
+.miranda-hover-card__read {
+  font-family: var(--mono-code);
+  font-size: 9px;
+  color: var(--miranda-ink-faint);
+}
+
+/* Floating Utility HUD */
+.miranda-hud {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(94%, 1240px);
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 18px;
+  background: rgba(15, 14, 12, 0.78);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 40px;
+  color: var(--miranda-paper);
+}
+
+.miranda-hud__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.miranda-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono-code);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: pulse-ring 1.2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.4; }
+  100% { transform: scale(0.9); opacity: 1; }
+}
+
+.miranda-hud__ticker {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  color: rgba(247, 243, 232, 0.6);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.miranda-hud__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.miranda-hud__btn {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--miranda-paper);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 5px 12px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.miranda-hud__btn:hover {
+  background: var(--miranda-paper);
+  color: var(--miranda-ink);
+  border-color: var(--miranda-paper);
+}
+
+/* =============================================================
+   THE BROADSHEET PAPER CONTAINER
+   ============================================================= */
+.miranda-sheet {
+  max-width: 1260px;
+  margin: 40px auto 0;
+  background-color: var(--miranda-paper);
+  background-image: 
+    linear-gradient(to bottom, rgba(255,255,255,0.4) 0%, transparent 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='0.04'/%3E%3C/svg%3E");
+  padding: 42px 54px 60px;
+  box-shadow: 
+    0 2px 4px rgba(0,0,0,0.3),
+    0 24px 64px rgba(0,0,0,0.7),
+    0 60px 120px rgba(0,0,0,0.5);
+  border: 1px solid #d4c8af;
+  position: relative;
+}
+
+/* Paper Stamp Row */
+.miranda-sheet__stamp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--miranda-ink);
+}
+
+/* Circular Rotating Stamp */
+.miranda-circular-stamp {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  color: var(--miranda-blue);
+}
+
+.rotating-stamp {
+  width: 100%;
+  height: 100%;
+  animation: rotate-slow 24s linear infinite;
+  fill: var(--miranda-blue);
+  font-family: var(--mono-code);
+  font-weight: 600;
+}
+
+@keyframes rotate-slow {
+  to { transform: rotate(360deg); }
+}
+
+.miranda-circular-stamp__icon {
+  position: absolute;
+  color: var(--miranda-blue);
+}
+
+.miranda-sheet__edition-meta {
+  display: flex;
+  gap: 32px;
+  font-family: var(--mono-code);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--miranda-ink-soft);
+}
+
+.miranda-weather-box {
+  text-align: right;
+  font-family: var(--mono-code);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--miranda-ink-faint);
+}
+
+.miranda-weather-box__bot {
+  color: var(--miranda-blue);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* =============================================================
+   THE BIG MASTHEAD
+   ============================================================= */
+.miranda-masthead {
+  text-align: center;
+  padding: 18px 0 14px;
+}
+
+.miranda-masthead__rule {
+  height: 1.5px;
+  background: var(--miranda-ink);
+  width: 100%;
+  margin: 8px 0;
+}
+
+.miranda-masthead__title {
+  font-family: var(--serif-title);
+  font-size: clamp(52px, 8.8vw, 114px);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 0.88;
+  color: var(--miranda-ink);
+  text-transform: uppercase;
+  margin: 6px 0;
+}
+
+.miranda-masthead__sub {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono-code);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--miranda-ink-faint);
+  padding: 4px 0;
+  border-bottom: 2px solid var(--miranda-ink);
+}
+
+.miranda-masthead__tagline {
+  font-family: var(--serif-body);
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--miranda-ink);
+}
+
+/* =============================================================
+   NAVIGATION BAR & FILTER PILLS
+   ============================================================= */
+.miranda-nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--miranda-rule-strong);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.miranda-nav-bar__links {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.miranda-nav-bar__item {
+  font-family: var(--mono-code);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  color: var(--miranda-ink-faint);
+  cursor: pointer;
+  padding: 4px 0;
+  position: relative;
+  transition: color 150ms ease;
+}
+
+.miranda-nav-bar__item:hover,
+.miranda-nav-bar__item.is-active {
+  color: var(--miranda-ink);
+  font-weight: 600;
+}
+
+.miranda-nav-bar__item.is-active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--miranda-blue);
+}
+
+.miranda-nav-bar__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.miranda-pill-tag {
+  font-family: var(--mono-code);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--miranda-ink-faint);
+  margin-right: 4px;
+}
+
+.miranda-filter-btn {
+  font-family: var(--mono-code);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  padding: 3px 9px;
+  border: 1px solid var(--miranda-rule);
+  background: transparent;
+  color: var(--miranda-ink-soft);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.miranda-filter-btn:hover,
+.miranda-filter-btn.active {
+  background: var(--miranda-ink);
+  color: var(--miranda-paper);
+  border-color: var(--miranda-ink);
+}
+
+/* =============================================================
+   FRONT PAGE GRID (LEAD + LIVE WIRE)
+   ============================================================= */
+.miranda-front-grid {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: 40px;
+  padding-bottom: 40px;
+  border-bottom: 2px solid var(--miranda-ink);
+}
+
+/* Lead Story */
+.miranda-lead {
+  border-right: 1px solid var(--miranda-rule);
+  padding-right: 36px;
+}
+
+.miranda-lead__badge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.miranda-badge-kicker {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--miranda-blue);
+}
+
+.miranda-badge-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono-code);
+  font-size: 9.5px;
+  color: var(--miranda-ink-faint);
+}
+
+.miranda-lead__title {
+  font-family: var(--serif-title);
+  font-size: clamp(34px, 4.4vw, 56px);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+  color: var(--miranda-ink);
+  cursor: pointer;
+  margin-bottom: 14px;
+  transition: color 180ms ease;
+}
+
+.miranda-lead__title:hover {
+  color: var(--miranda-blue);
+}
+
+.miranda-lead__deck {
+  font-family: var(--serif-body);
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.38;
+  color: var(--miranda-ink-soft);
+  margin-bottom: 22px;
+}
+
+.miranda-lead__photo-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: var(--miranda-paper-dark);
+  margin-bottom: 22px;
+  overflow: hidden;
+  border: 1px solid var(--miranda-ink);
+}
+
+.miranda-lead__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(100%) contrast(1.22) brightness(0.92);
+}
+
+.miranda-halftone-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#111 0.75px, transparent 0.75px);
+  background-size: 3px 3px;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.miranda-lead__caption {
+  display: block;
+  font-family: var(--mono-code);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  color: var(--miranda-ink-faint);
+  margin-top: 6px;
+}
+
+.miranda-lead__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 18px;
+  font-size: 14.5px;
+  line-height: 1.58;
+  text-align: justify;
+}
+
+.miranda-col p {
+  margin-bottom: 12px;
+}
+
+.miranda-dropcap::first-letter {
+  float: left;
+  font-family: var(--serif-title);
+  font-size: 58px;
+  line-height: 0.8;
+  padding: 4px 8px 0 0;
+  color: var(--miranda-blue);
+}
+
+.miranda-quote-box {
+  border-left: 2px solid var(--miranda-blue);
+  padding: 8px 0 8px 16px;
+  margin: 18px 0;
+  background: rgba(22, 47, 88, 0.03);
+}
+
+.quote-mark {
+  font-family: var(--serif-title);
+  font-size: 32px;
+  color: var(--miranda-blue);
+  line-height: 0;
+}
+
+.quote-text {
+  font-family: var(--serif-title);
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--miranda-blue);
+  margin: 4px 0 !important;
+}
+
+.quote-author {
+  font-family: var(--mono-code);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--miranda-ink-faint);
+}
+
+.miranda-lead__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.miranda-btn-action {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--miranda-blue);
+  color: var(--miranda-paper);
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.miranda-btn-action:hover {
+  background: var(--miranda-blue-light);
+}
+
+.miranda-link-source {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--miranda-ink);
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* =============================================================
+   THE LIVE AI WIRE (RIGHT COLUMN)
+   ============================================================= */
+.miranda-wire {
+  display: flex;
+  flex-direction: column;
+}
+
+.miranda-wire__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--miranda-ink);
+  margin-bottom: 14px;
+}
+
+.miranda-wire__header h3 {
+  font-family: var(--serif-title);
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.miranda-wire__count {
+  margin-left: auto;
+  font-family: var(--mono-code);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--miranda-ink-faint);
+}
+
+.miranda-wire__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.miranda-wire__item {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--miranda-rule);
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+.miranda-wire__item:hover {
+  transform: translateX(4px);
+}
+
+.miranda-wire__num {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  color: var(--miranda-blue);
+  padding-top: 3px;
+}
+
+.miranda-wire__kicker {
+  font-family: var(--mono-code);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--miranda-ink-faint);
+}
+
+.miranda-wire__title {
+  font-family: var(--serif-title);
+  font-size: 16px;
+  line-height: 1.14;
+  margin: 3px 0 4px;
+  color: var(--miranda-ink);
+}
+
+.miranda-wire__item:hover .miranda-wire__title {
+  color: var(--miranda-blue);
+}
+
+.miranda-wire__desc {
+  font-size: 12px;
+  line-height: 1.34;
+  color: var(--miranda-ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.miranda-wire__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono-code);
+  font-size: 9.5px;
+  color: var(--miranda-ink-faint);
+  margin-top: 6px;
+}
+
+.miranda-wire__link {
+  margin-left: auto;
+  color: var(--miranda-blue);
+  text-decoration: underline;
+}
+
+/* =============================================================
+   CLASSIFIEDS (GITHUB REPOS)
+   ============================================================= */
+.miranda-classifieds {
+  padding: 10px 0 40px;
+}
+
+.miranda-classifieds__banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--miranda-paper-dark);
+  border: 1px solid var(--miranda-rule-strong);
+  margin-bottom: 24px;
+}
+
+.miranda-classifieds__banner h2 {
+  font-family: var(--serif-title);
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+
+.miranda-classifieds__banner p {
+  font-family: var(--mono-code);
+  font-size: 10.5px;
+  color: var(--miranda-ink-faint);
+  margin-top: 2px;
+}
+
+.miranda-repo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.miranda-repo-card {
+  border: 1px solid var(--miranda-rule-strong);
+  padding: 16px;
+  background: var(--miranda-paper-light);
+  display: flex;
+  flex-direction: column;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.miranda-repo-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  border-color: var(--miranda-ink);
+}
+
+.miranda-repo-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-family: var(--mono-code);
+  font-size: 10px;
+}
+
+.miranda-repo-card__num {
+  color: var(--miranda-blue);
+  font-weight: 600;
+}
+
+.miranda-repo-card__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--miranda-ink-soft);
+}
+
+.lang-circle {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--miranda-blue);
+}
+
+.miranda-repo-card__stars {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.miranda-repo-card__name {
+  font-family: var(--serif-title);
+  font-size: 17px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.miranda-repo-card__name a:hover {
+  color: var(--miranda-blue);
+}
+
+.miranda-repo-card__desc {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--miranda-ink-soft);
+  flex: 1;
+  margin-bottom: 14px;
+}
+
+.miranda-repo-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.repo-tag {
+  font-family: var(--mono-code);
+  font-size: 8.5px;
+  background: var(--miranda-paper-dark);
+  padding: 2px 6px;
+  border: 1px solid var(--miranda-rule);
+  color: var(--miranda-ink-faint);
+}
+
+.miranda-repo-card__action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--miranda-rule);
+  padding-top: 10px;
+  font-family: var(--mono-code);
+  font-size: 10px;
+}
+
+.clone-btn {
+  color: var(--miranda-blue);
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.fork-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--miranda-ink-faint);
+}
+
+/* =============================================================
+   MULTIMEDIA & KEYNOTES
+   ============================================================= */
+.miranda-multimedia {
+  padding: 10px 0 40px;
+}
+
+.miranda-multimedia__hero {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.miranda-multimedia__hero h2 {
+  font-family: var(--serif-title);
+  font-size: 36px;
+  margin: 6px 0;
+}
+
+.miranda-multimedia__hero p {
+  font-size: 15px;
+  color: var(--miranda-ink-soft);
+}
+
+.miranda-video-spread {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+
+.miranda-video-frame {
+  border: 1px solid var(--miranda-ink);
+  background: #000;
+}
+
+.miranda-video-caption {
+  padding: 10px 14px;
+  background: var(--miranda-paper-dark);
+  font-size: 12.5px;
+  border-top: 1px solid var(--miranda-ink);
+}
+
+.miranda-video-side {
+  border: 1px solid var(--miranda-rule-strong);
+  padding: 24px;
+  background: var(--miranda-paper-light);
+}
+
+.miranda-video-side h3 {
+  font-family: var(--serif-title);
+  font-size: 20px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--miranda-rule);
+  padding-bottom: 8px;
+}
+
+.note-card h4 {
+  font-family: var(--serif-title);
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.note-card p {
+  font-size: 13px;
+  line-height: 1.44;
+  color: var(--miranda-ink-soft);
+  margin-bottom: 10px;
+}
+
+/* =============================================================
+   EVIDENCE DESK TABLE
+   ============================================================= */
+.miranda-evidence-tab {
+  padding: 10px 0 40px;
+}
+
+.miranda-evidence-tab__header {
+  margin-bottom: 22px;
+}
+
+.miranda-evidence-tab__header h2 {
+  font-family: var(--serif-title);
+  font-size: 24px;
+  letter-spacing: 0.04em;
+}
+
+.miranda-evidence-tab__header p {
+  font-size: 14px;
+  color: var(--miranda-ink-soft);
+  margin-top: 4px;
+}
+
+.miranda-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.miranda-table th {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--miranda-ink-faint);
+  border-bottom: 2px solid var(--miranda-ink);
+  padding: 10px 8px;
+}
+
+.miranda-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--miranda-rule);
+}
+
+.bold-cell {
+  font-family: var(--serif-title);
+  font-weight: 600;
+  font-size: 14.5px;
+}
+
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #10b981;
+  font-family: var(--mono-code);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.table-link {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  color: var(--miranda-blue);
+  text-decoration: underline;
+}
+
+.table-btn {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  background: none;
+  border: 1px solid var(--miranda-rule-strong);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* =============================================================
+   SUBSCRIPTION BOX
+   ============================================================= */
+.miranda-subscribe-box {
+  margin: 40px 0 30px;
+  background: var(--miranda-paper-dark);
+  border: 2px solid var(--miranda-ink);
+  padding: 34px 40px;
+}
+
+.miranda-subscribe-box__inner {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 36px;
+  align-items: center;
+}
+
+.miranda-subscribe-box__text h3 {
+  font-family: var(--serif-title);
+  font-size: 32px;
+  line-height: 1.05;
+  margin: 6px 0 10px;
+}
+
+.miranda-subscribe-box__text p {
+  font-size: 13.5px;
+  line-height: 1.48;
+  color: var(--miranda-ink-soft);
+}
+
+.miranda-subscribe-form {
+  display: flex;
+  gap: 8px;
+}
+
+.miranda-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--miranda-paper);
+  border: 1px solid var(--miranda-ink);
+  font-family: var(--serif-body);
+  font-size: 14.5px;
+  color: var(--miranda-ink);
+}
+
+.miranda-input:focus {
+  outline: 2px solid var(--miranda-blue);
+}
+
+.miranda-btn-stamp {
+  font-family: var(--mono-code);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--miranda-ink);
+  color: var(--miranda-paper);
+  padding: 0 20px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 150ms ease;
+}
+
+.miranda-btn-stamp:hover {
+  background: var(--miranda-blue);
+}
+
+.subscribed-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono-code);
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* =============================================================
+   COLOPHON & FOOTER
+   ============================================================= */
+.miranda-colophon {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--miranda-ink);
+}
+
+.miranda-colophon__cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  font-size: 12px;
+  line-height: 1.44;
+  color: var(--miranda-ink-soft);
+  margin-bottom: 24px;
+}
+
+.miranda-colophon__cols h4 {
+  font-family: var(--mono-code);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--miranda-ink);
+  margin-bottom: 6px;
+}
+
+.miranda-colophon__bottom {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--miranda-rule);
+  padding-top: 12px;
+  font-family: var(--mono-code);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--miranda-ink-faint);
+}
+
+/* =============================================================
+   RESPONSIVE DESIGN
+   ============================================================= */
+@media (max-width: 900px) {
+  .miranda-sheet { padding: 24px; }
+  .miranda-front-grid { grid-template-columns: 1fr; }
+  .miranda-lead { border-right: none; padding-right: 0; border-bottom: 1px solid var(--miranda-rule); padding-bottom: 24px; }
+  .miranda-lead__columns { grid-template-columns: 1fr; }
+  .miranda-subscribe-box__inner { grid-template-columns: 1fr; }
+  .miranda-video-spread { grid-template-columns: 1fr; }
+  .miranda-colophon__cols { grid-template-columns: 1fr; }
+}

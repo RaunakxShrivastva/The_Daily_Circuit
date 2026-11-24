@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#120400" />
+    <title>The Daily Circuit — AI News, In Context</title>
+    <meta name="description" content="The Daily Circuit covers artificial intelligence, science, technology and the future. Rigorous journalism on the stories that matter." />
+    <meta property="og:title" content="The Daily Circuit — AI News, In Context" />
+    <meta property="og:description" content="Artificial intelligence · science · technology · the future." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preload" as="video" href="/hero-loop.mp4" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              desk: '#181715',
+              bar: '#141311',
+              cover: '#211f1c',
+              paper: '#f4efe6',
+              paperDeep: '#ebe3d5',
+              ink: '#141413',
+              muted: '#524f49',
+              vermilion: '#c83e2b',
+            },
+            fontFamily: {
+              display: ['"Playfair Display"', 'Georgia', 'serif'],
+              sans: ['"Inter"', 'system-ui', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

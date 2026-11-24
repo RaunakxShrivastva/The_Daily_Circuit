@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════
+   Navbar — Fluxora pill nav adapted for The Daily Circuit
+   ═══════════════════════════════════════════════════════ */
+
+.nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(14px, 1.7vw, 22px) var(--gutter);
+  transition: background 0.4s var(--ease-out), backdrop-filter 0.4s;
+}
+.nav.nav--scrolled {
+  background: rgba(13, 3, 0, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--hair-soft);
+}
+
+/* Brand */
+.nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: clamp(15px, 1.4vw, 19px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.nav__logo {
+  width: 1.5em;
+  height: 1.5em;
+  flex: none;
+}
+.nav__wordmark { color: #fff; }
+.nav__wordmark em {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--amber);
+  letter-spacing: 0;
+}
+
+/* Pill nav */
+.nav__pill {
+  display: none;
+  padding: 5px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: rgba(28, 8, 2, 0.38);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.nav__pill ul {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.nav__pill a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 450;
+  color: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.04);
+  transition: background 0.25s, color 0.25s;
+}
+.nav__pill a:hover { background: rgba(255,255,255,0.13); color: #fff; }
+
+/* Actions */
+.nav__actions { display: flex; align-items: center; gap: 10px; }
+.nav__cta { font-size: 13.5px; font-weight: 600; }
+
+.nav__burger {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  background: rgba(28, 8, 2, 0.44);
+  backdrop-filter: blur(10px);
+}
+.nav__burger svg { width: 20px; height: 20px; }
+
+/* Mobile sheet */
+.nav__sheet {
+  position: fixed;
+  inset: 72px 12px auto;
+  padding: 18px;
+  border: 1px solid var(--hair);
+  border-radius: 20px;
+  background: rgba(14, 4, 0, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  animation: sheet-in 0.3s var(--ease-out);
+}
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+.nav__sheet ul { margin: 0 0 14px; display: grid; gap: 2px; }
+.nav__sheet a {
+  display: block;
+  padding: 12px 12px;
+  border-radius: 10px;
+  font-size: 16px;
+  color: rgba(255,255,255,0.86);
+  transition: background 0.2s;
+}
+.nav__sheet a:hover { background: rgba(255,255,255,0.07); }
+.nav__sheet-cta { width: 100%; justify-content: center; padding: 0.85em 1.4em; }
+
+/* Issue badge */
+.nav__issue {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 4px 10px;
+  border: 1px solid var(--hair-soft);
+  border-radius: 99px;
+}
+
+@media (min-width: 960px) {
+  .nav__pill { display: block; }
+  .nav__burger { display: none; }
+}
+@media (max-width: 480px) {
+  .nav__cta { display: none; }
+  .nav__issue { display: none; }
+}

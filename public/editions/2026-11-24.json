@@ -1,0 +1,213 @@
+{
+  "date": "2026-11-24",
+  "issueNumber": 42,
+  "editionTitle": "THE DAILY CIRCUIT",
+  "signalRatio": 96.8,
+  "pages": {
+    "page1_front": {
+      "headline": "Beam MoE Architecture Unveils 501B Sparse Parameters for Agent Workloads",
+      "subheadline": "Reflection Team introduces Beam, a 501.3B sparse MoE activating 23.4B parameters optimized for deep reasoning and multi-turn coding agents.",
+      "leadBody": [
+        "The Reflection Team has released the technical report for Beam, a massive 501.3 billion parameter sparse Mixture-of-Experts (MoE) model. Activating just 23.4 billion parameters per forward pass, Beam targets specialized coding and agentic workloads while maintaining tight computational bounds.",
+        "Simultaneously, hardware benchmarks reveal AMD's EPYC server chips achieved a 12.1x geometric mean performance improvement over ten years. As compute efficiency scales across both silicons and sparse architectures, local execution engines like Songe are enabling developers to pool idle compute for local model training.",
+        "Meanwhile, infrastructure security remains vulnerable, with active intrusion campaigns exploiting Check Point management servers across 22 enterprise deployments. Engineering teams are advised to audit perimeter software and isolate legacy management ports immediately."
+      ],
+      "sixtySecondBrief": [
+        "Beam MoE scales to 501.3B parameters while running on only 23.4B active parameters per inference pass.",
+        "AMD EPYC Zen 6 demonstrates a 12.1x performance multiplier over Zen 1 architecture benchmarks.",
+        "Active cyber campaign targets Check Point management servers across 22 enterprise organizations."
+      ]
+    },
+    "page2_models": {
+      "releases": [
+        {
+          "name": "Beam-501B-MoE",
+          "lab": "Reflection Team",
+          "license": "Open Weights",
+          "verifiedDelta": "501.3B total / 23.4B active parameters optimized for agents",
+          "hypeCheck": "While total parameter counts sound massive, routing overhead requires high-bandwidth memory topologies to maintain interactive latency."
+        },
+        {
+          "name": "Inkling-2-Mini-GGUF",
+          "lab": "Unsloth / Thinking Machines",
+          "license": "Apache 2.0",
+          "verifiedDelta": "1.91M 24h downloads on HuggingFace",
+          "hypeCheck": "Quantized GGUF execution yields high edge throughput, though vision-language performance shows slight degradation on fine spatial details."
+        },
+        {
+          "name": "Voice-Isolator",
+          "lab": "Inworld AI",
+          "license": "MIT",
+          "verifiedDelta": "12.7k monthly downloads for audio-to-audio extraction",
+          "hypeCheck": "Provides tight latency bounds for real-time audio streams, though background speech cross-talk can cause minor isolation artifacts."
+        }
+      ]
+    },
+    "page3_accuracy": {
+      "battles": [
+        {
+          "benchmark": "SWE-Bench Verified",
+          "modelA": {
+            "name": "Beam-501B-MoE",
+            "score": 68.4,
+            "lab": "Reflection Team"
+          },
+          "modelB": {
+            "name": "Qwen3.8-27B-pi",
+            "score": 61.2,
+            "lab": "Harness Hub"
+          },
+          "delta": "+7.2% margin",
+          "analysis": "Beam's dynamic expert routing allocates specialized capacity to repository context resolution and multi-file code editing."
+        },
+        {
+          "benchmark": "Delayed Consequence Ops Benchmark",
+          "modelA": {
+            "name": "Hermes-Agent-v3",
+            "score": 74.1,
+            "lab": "Nous Research"
+          },
+          "modelB": {
+            "name": "AutoGPT-Next",
+            "score": 65.8,
+            "lab": "Significant Gravitas"
+          },
+          "delta": "+8.3% margin",
+          "analysis": "Hermes utilizes explicit state trajectory logging to evaluate long-term downstream operational impact across multi-turn execution paths."
+        },
+        {
+          "benchmark": "AIME 2024 Reasoning",
+          "modelA": {
+            "name": "Inkling-2-Mini",
+            "score": 54.2,
+            "lab": "Thinking Machines"
+          },
+          "modelB": {
+            "name": "Hy4-Flash",
+            "score": 48.9,
+            "lab": "Tencent"
+          },
+          "delta": "+5.3% margin",
+          "analysis": "Inkling-2 leverages loop residual passes to extend inference compute without incurring additional parameter memory overhead."
+        }
+      ],
+      "editorialTake": "Sparse MoE routing combined with loop residuals is redefining test-time scaling efficiency across frontier reasoning benchmarks."
+    },
+    "page4_repos": {
+      "topRepos": [
+        {
+          "repo": "morluto/rea",
+          "stars24h": "+2,450",
+          "stack": "TypeScript",
+          "whyItMatters": "Automates reverse-engineering workflows from high-level app behavior down to raw native binaries using specialized autonomous sub-agents."
+        },
+        {
+          "repo": "openclaw/openclaw",
+          "stars24h": "+4,120",
+          "stack": "TypeScript",
+          "whyItMatters": "Cross-platform desktop agent framework capable of executing system-level actions natively across macOS, Linux, and Windows."
+        },
+        {
+          "repo": "sous-labs/songe",
+          "stars24h": "+1,280",
+          "stack": "Python",
+          "whyItMatters": "Turns local cluster idle compute into a distributed model training engine for fine-tuning open-weights models locally."
+        },
+        {
+          "repo": "firecrawl/firecrawl",
+          "stars24h": "+3,150",
+          "stack": "TypeScript",
+          "whyItMatters": "Converts raw web pages into clean LLM-ready context vectors across 550+ data connectors via a unified API."
+        }
+      ]
+    },
+    "page5_boardroom": {
+      "moves": [
+        {
+          "company": "Stalwart Labs",
+          "leader": "Open Source Maintainers",
+          "headline": "Stalwart launches drop-in replacement for Microsoft Exchange server infrastructure",
+          "impact": "Provides enterprise DevOps teams an open-source, Rust-based alternative for enterprise mail, calendar, and directory services."
+        },
+        {
+          "company": "U.S. Department of Commerce",
+          "leader": "Bureau of Industry and Security",
+          "headline": "Megaspeed added to U.S. export entity list, cutting access to Nvidia AI hardware",
+          "impact": "Forces hardware supply chains to re-route cloud GPU procurement and accelerate compliance auditing for international server deployments."
+        },
+        {
+          "company": "Quad9 DNS",
+          "leader": "Global Operations",
+          "headline": "Quad9 deactivates DNS resolution infrastructure in France following legal mandates",
+          "impact": "Engineers using Quad9 upstream DNS endpoints in European cloud zones must failover to alternate resilient resolvers immediately."
+        }
+      ]
+    },
+    "page6_research": {
+      "papers": [
+        {
+          "title": "Beam Model Technical Report",
+          "authors": "Reflection Team, Adam Abdulhamid et al.",
+          "arxivId": "arXiv:2611.26358",
+          "breakthrough": "Introduces a 501.3B parameter sparse MoE architecture that activates only 23.4B parameters per token for agent workloads.",
+          "impactForEngineers": "Demonstrates that sparse MoE routing allows high-capability reasoning models to run efficiently within constrained compute budgets."
+        },
+        {
+          "title": "Unlocking the Power of Loops in Pretrained LLMs with Loop Residuals",
+          "authors": "Xuanlei Zhao, Hailun Xu, Kai Wang",
+          "arxivId": "arXiv:2611.31094",
+          "breakthrough": "Enables parameter-free test-time compute scaling by looping shared transformer layers using residual connections without retraining from scratch.",
+          "impactForEngineers": "Allows inference engines to dynamically increase deep reasoning passes on demanding prompts without increasing VRAM requirements."
+        },
+        {
+          "title": "Measuring and Teaching Language Model Agents to Act on Delayed Consequences",
+          "authors": "Shardul Bansal, Seth Schilbe, Jarrod Barnes",
+          "arxivId": "arXiv:2611.28158",
+          "breakthrough": "Establishes a benchmark framework measuring how current agent decisions alter long-horizon downstream environment states and reward functions.",
+          "impactForEngineers": "Provides practical evaluation metrics for building long-running autonomous DevOps and financial operations agents."
+        }
+      ]
+    },
+    "page7_builders": {
+      "weekendBuild": {
+        "title": "Build a Distributed Local-Compute Fine-Tuning Cluster",
+        "stack": [
+          "Python",
+          "PyTorch",
+          "Songe",
+          "Docker"
+        ],
+        "steps": [
+          "Cluster idle developer workstations into a local Ray or Songe worker node network.",
+          "Containerize model gradient synchronization jobs using lightweight PyTorch RPC workers.",
+          "Execute a quantized fine-tuning run on a local open-weights model using pooled GPU VRAM."
+        ]
+      },
+      "conceptDecoded": {
+        "term": "Loop Residuals",
+        "plainEnglish": "A technique where transformer model layers are executed in a recurrent loop using residual skip connections during inference. This grants the model more thinking time without requiring additional parameters or extra VRAM allocation."
+      },
+      "architectureTeardown": {
+        "system": "Sparse Mixture-of-Experts (MoE) Routing",
+        "tradeoff": "Minimizes active FLOPS per token during computation at the expense of requiring high memory bandwidth to host all expert weights."
+      }
+    },
+    "page8_signoff": {
+      "quote": {
+        "text": "Premature optimization is the root of all evil, but unmonitored agentic execution is a close second.",
+        "author": "Anonymous Systems Architect"
+      },
+      "dailyPuzzle": {
+        "question": "Why does a 501B parameter sparse MoE model with 23.4B active parameters consume significantly more VRAM than a dense 23.4B model?",
+        "options": [
+          "All 501B parameter weights must remain resident in GPU VRAM even if only 23.4B are executed per forward pass.",
+          "Active parameters require 20x higher floating-point precision during token generation.",
+          "The expert routing gate dynamically generates new weight matrices at runtime."
+        ],
+        "answerIndex": 0,
+        "explanation": "MoE models only compute activations across routing experts (23.4B active), but the entire 501.3B parameter set must be stored in VRAM to allow instant routing access per token."
+      },
+      "signoffNotice": "EDITION COMPLETE \u2014 GO BUILD"
+    }
+  }
+}
