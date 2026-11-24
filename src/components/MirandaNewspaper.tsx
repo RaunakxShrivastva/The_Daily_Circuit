@@ -42,8 +42,22 @@ export function MirandaNewspaper() {
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [activeTab, setActiveTab] = useState<'broadsheet' | 'classifieds' | 'multimedia' | 'evidence'>('broadsheet');
 
+  const [pipelineEdition, setPipelineEdition] = useState<any>(null);
+
   useEffect(() => {
     let cancelled = false;
+    
+    // Fetch 24h compiled edition from pipeline
+    fetch('/editions/latest.json')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!cancelled && data && data.pages) {
+          setPipelineEdition(data);
+        }
+      })
+      .catch(() => {});
+
+    // Fetch real-time live APIs (HN, Dev.to, GitHub)
     fetchLiveEdition()
       .then(data => {
         if (!cancelled) {
@@ -67,6 +81,38 @@ export function MirandaNewspaper() {
   }, []);
 
   const edition: Edition = (() => {
+    if (pipelineEdition && pipelineEdition.pages) {
+      const p1 = pipelineEdition.pages.page1_front;
+      const pipelineLead: Story = {
+        id: 'pipeline-lead',
+        no: 1,
+        headline: p1.headline,
+        standfirst: p1.subheadline,
+        kicker: 'SYSTEM ARCHITECTURE',
+        byline: 'The Daily Circuit Dispatch',
+        dateline: pipelineEdition.date || 'Today',
+        readTime: '4 min',
+        photo: '/photos/lead.jpg',
+        photoCaption: 'Autonomous micro-actors orchestrating distributed task graphs.',
+        body: p1.leadBody || [],
+        tags: ['Distributed Systems', 'Agent Substrate', 'Inference'],
+        sources: [
+          { kind: 'paper', title: 'System Dispatch', date: pipelineEdition.date || 'Today', detail: 'Compiled from verified 24h engineering signals' }
+        ],
+        timeline: [
+          { when: '06:00 UTC', title: 'Signals Ingested', body: '24h HackerNews, GitHub, and Hugging Face telemetry analyzed.' }
+        ]
+      };
+
+      const stories = [pipelineLead, ...(liveData ? liveDataToStories(liveData) : STATIC_EDITION.stories.slice(1))];
+      return {
+        ...STATIC_EDITION,
+        issueDate: pipelineEdition.date || STATIC_EDITION.issueDate,
+        issueNo: `Vol. I · No. ${pipelineEdition.issueNumber || 42}`,
+        stories
+      };
+    }
+
     if (!liveData || (liveData.hn.length === 0 && liveData.devto.length === 0)) {
       return STATIC_EDITION;
     }
