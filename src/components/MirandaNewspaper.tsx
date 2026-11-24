@@ -192,6 +192,7 @@ export function MirandaNewspaper() {
   const [hoveredStory, setHoveredStory] = useState<Story | null>(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('page-01');
+  const [showPageRail, setShowPageRail] = useState(false);
 
   const [pipelineEdition, setPipelineEdition] = useState<any>(null);
 
@@ -211,6 +212,7 @@ export function MirandaNewspaper() {
 
   useEffect(() => {
     const handleScroll = () => {
+      setShowPageRail(window.scrollY > 350);
       const scrollPos = window.scrollY + 200;
       for (let i = PAGE_SECTIONS.length - 1; i >= 0; i--) {
         const el = document.getElementById(PAGE_SECTIONS[i].id);
@@ -393,36 +395,18 @@ export function MirandaNewspaper() {
         </div>
       )}
 
-      {/* Top Floating Utility HUD */}
-      <header className="miranda-hud">
-        <div className="miranda-hud__left">
-          <span className="miranda-badge-live">
-            <span className="pulse-dot" /> LIVE TELETYPE
-          </span>
-          <span className="miranda-hud__ticker">
-            NASDAQ AI: +2.18% · GPU COMPUTE CLUSTER: OPTIMAL (14ms) · GLOBAL VERIFIED NODES: 8,420
-          </span>
-        </div>
-        <div className="miranda-hud__right">
-          <button 
-            className="miranda-hud__btn"
-            onClick={() => {
-              if (leadStory) setReadingStory(leadStory);
-            }}
-          >
-            <BookOpen size={13} /> Open Lead Story
-          </button>
-          <button 
-            className="miranda-hud__btn"
-            onClick={() => scrollToSection('page-08')}
-          >
-            Subscribe to Print
-          </button>
-        </div>
-      </header>
+      {/* Top Full-Screen Home Page Stage with Botanical Impressionist Garden Background */}
+      <HomePageStage 
+        onScrollToNewspaper={() => {
+          document.querySelector('.miranda-sheet')?.scrollIntoView({ behavior: 'smooth' });
+        }} 
+      />
 
-      {/* Floating Outside-Paper Page Rail (Sticky Page Markers on the Side) */}
-      <aside className="miranda-page-rail" aria-label="Broadsheet Page Index">
+      {/* Floating Outside-Paper Page Rail (Sticky Page Markers - Only visible when reading newspaper) */}
+      <aside 
+        className={`miranda-page-rail transition-all duration-300 ${showPageRail ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 -translate-x-4 pointer-events-none'}`} 
+        aria-label="Broadsheet Page Index"
+      >
         <div className="miranda-page-rail__heading">
           <Layers size={10} />
           <span>PAGES</span>
@@ -1336,9 +1320,6 @@ export function MirandaNewspaper() {
           </div>
         </footer>
       </main>
-
-      {/* Full-Screen Home Page Stage on Impressionist Garden Background */}
-      <HomePageStage onScrollToNewspaper={() => scrollToSection('page-01')} />
 
       {/* Full-Screen Interactive Story Reader (When clicking any article) */}
       {readingStory && (
