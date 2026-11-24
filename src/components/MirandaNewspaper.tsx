@@ -317,6 +317,37 @@ export function MirandaNewspaper() {
         url: `https://github.com/${r.repo}`
       })) || []);
 
+  const modelsData = pipelineEdition?.pages?.page2_models?.releases || [
+    { name: 'DeepSeek-R1-Distill-Qwen-32B', lab: 'DeepSeek AI', license: 'MIT', verifiedDelta: 'AIME 2024: 72.6% (+18.4% over base)', hypeCheck: 'Remarkable reasoning density, though tool calls can occasionally loop on open-ended system tasks.' },
+    { name: 'Beam-501B-MoE', lab: 'Reflection Team', license: 'Open Weights', verifiedDelta: '501.3B total / 23.4B active parameters optimized for agents', hypeCheck: 'While parameter counts sound massive, routing overhead requires high-bandwidth memory topologies.' },
+    { name: 'Inkling-2-Mini-GGUF', lab: 'Thinking Machines', license: 'Apache 2.0', verifiedDelta: '1.91M 24h downloads on HuggingFace', hypeCheck: 'Quantized execution yields high edge throughput, though slight degradation on fine spatial reasoning.' }
+  ];
+
+  const accuracyBattles = pipelineEdition?.pages?.page3_accuracy?.battles || [
+    { benchmark: 'SWE-Bench Verified (Full Codebase Patching)', modelA: { name: 'Claude 3.5 Sonnet', score: 49.2, lab: 'Anthropic' }, modelB: { name: 'GPT-4o (Nov Refill)', score: 38.8, lab: 'OpenAI' }, delta: '+10.4% Delta', analysis: 'Sonnet demonstrates superior repo-level dependency mapping across multi-file diffs.' },
+    { benchmark: 'AIME 2024 Olympiad (Competition Mathematics)', modelA: { name: 'DeepSeek-R1', score: 79.8, lab: 'DeepSeek' }, modelB: { name: 'OpenAI o1-preview', score: 74.4, lab: 'OpenAI' }, delta: '+5.4% Delta', analysis: 'Long-horizon chain-of-thought verification prevents algebraic hallucination.' }
+  ];
+
+  const buildersCorner = pipelineEdition?.pages?.page7_builders || {
+    weekendBuild: {
+      title: 'Local Speculative Verification Proxy',
+      stack: ['Python 3.12', 'FastAPI', 'llama.cpp GGUF'],
+      steps: [
+        'Spin up a lightweight 1.5B draft model alongside your primary 32B model on local NVMe storage.',
+        'Route greedy draft candidate tokens through a verification kernel with batch size 8.',
+        'Measure token-per-second acceleration on standard code completions and prompt refills.'
+      ]
+    },
+    conceptDecoded: {
+      term: 'Speculative Decoding',
+      plainEnglish: 'A technique where a fast, tiny model guesses several upcoming words ahead of time, and the large model checks them all in a single parallel step, boosting generation speed without losing accuracy.'
+    },
+    architectureTeardown: {
+      system: 'PagedAttention & Chunked Prefill',
+      tradeoff: 'Eliminates internal memory fragmentation at the expense of non-contiguous cache lookups.'
+    }
+  };
+
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput) return;
@@ -677,6 +708,92 @@ export function MirandaNewspaper() {
               <span>AP-SOUTH (MUMBAI): 42ms · PEAK SOLAR</span>
             </div>
           </div>
+
+          {/* Top AI Models of Today & Accuracy Head-to-Head */}
+          <div className="miranda-models-accuracy-grid">
+            {/* Left: Top AI Models */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Cpu size={16} className="text-red-700" />
+                <h3 style={{ fontFamily: 'var(--serif-title)', fontSize: 18, color: 'var(--miranda-ink)' }}>
+                  Top AI Models of Today (Releases &amp; Hype Checks)
+                </h3>
+              </div>
+              {modelsData.map((m: any, i: number) => (
+                <div key={i} className="miranda-model-item">
+                  <div className="miranda-model-header">
+                    <a
+                      href={`https://huggingface.co/models?search=${encodeURIComponent(m.name)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-serif font-bold text-sm text-neutral-950 flex items-center gap-1.5 hover:text-red-700 transition-colors"
+                    >
+                      {m.name}
+                      <ArrowUpRight size={12} className="text-neutral-500" />
+                    </a>
+                    <span className="font-mono text-[8.5px] bg-neutral-900 text-white px-2 py-0.5 rounded font-semibold uppercase">
+                      {m.license}
+                    </span>
+                  </div>
+                  <div className="text-[10px] font-mono text-neutral-600 mb-1">
+                    Lab: <strong className="text-neutral-900">{m.lab}</strong> · {m.verifiedDelta}
+                  </div>
+                  <div className="bg-[#ede6d8] p-2 rounded text-[10.5px] font-mono text-neutral-800 flex items-start gap-1.5">
+                    <AlertTriangle size={12} className="text-amber-700 shrink-0 mt-0.5" />
+                    <span><strong>Hype Check:</strong> {m.hypeCheck}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Right: Accuracy Head-to-Head */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Activity size={16} className="text-emerald-700" />
+                <h3 style={{ fontFamily: 'var(--serif-title)', fontSize: 18, color: 'var(--miranda-ink)' }}>
+                  Accuracy Head-to-Head (Delta Battles)
+                </h3>
+              </div>
+              {accuracyBattles.map((b: any, idx: number) => (
+                <div key={idx} className="miranda-accuracy-card">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-mono text-[10px] font-bold text-neutral-900 uppercase">
+                      {b.benchmark}
+                    </span>
+                    <span className="font-mono text-[9px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                      {b.delta}
+                    </span>
+                  </div>
+
+                  {/* Visual Bar A */}
+                  <div className="mb-2">
+                    <div className="flex justify-between text-[10px] font-mono font-bold text-neutral-950">
+                      <span>{b.modelA.name} ({b.modelA.lab})</span>
+                      <span>{b.modelA.score}%</span>
+                    </div>
+                    <div className="miranda-bar-bg">
+                      <div className="miranda-bar-fill" style={{ width: `${Math.min(100, b.modelA.score)}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Visual Bar B */}
+                  <div className="mb-2">
+                    <div className="flex justify-between text-[10px] font-mono text-neutral-600">
+                      <span>{b.modelB.name} ({b.modelB.lab})</span>
+                      <span>{b.modelB.score}%</span>
+                    </div>
+                    <div className="miranda-bar-bg">
+                      <div className="miranda-bar-fill--sub" style={{ width: `${Math.min(100, b.modelB.score)}%` }} />
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] font-serif italic text-neutral-700 mt-1">
+                    {b.analysis}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* ========================================================
@@ -864,6 +981,56 @@ export function MirandaNewspaper() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Student & Builder Corner */}
+          <div className="miranda-builder-section">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Terminal size={18} className="text-red-700" />
+              <h3 style={{ fontFamily: 'var(--serif-title)', fontSize: 20, color: 'var(--miranda-ink)' }}>
+                Student &amp; Builder Corner — Weekend Architecture Build
+              </h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
+              <div>
+                <h4 style={{ fontFamily: 'var(--mono-code)', fontSize: 13, fontWeight: 700, color: '#c83e2b', marginBottom: 6 }}>
+                  Build: {buildersCorner.weekendBuild?.title}
+                </h4>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                  {buildersCorner.weekendBuild?.stack?.map((tool: string, i: number) => (
+                    <span key={i} className="font-mono text-[9px] bg-neutral-900 text-white px-2 py-0.5 rounded">
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+                <ol className="miranda-builder-steps list-decimal">
+                  {buildersCorner.weekendBuild?.steps?.map((step: string, i: number) => (
+                    <li key={i} style={{ marginBottom: 6 }}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+
+              <div>
+                <div style={{ background: 'var(--miranda-paper-dark)', borderLeft: '3px solid var(--miranda-ink)', padding: 12, marginBottom: 12 }}>
+                  <div style={{ fontFamily: 'var(--mono-code)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>
+                    Concept Decoded: {buildersCorner.conceptDecoded?.term}
+                  </div>
+                  <p style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--miranda-ink-soft)' }}>
+                    {buildersCorner.conceptDecoded?.plainEnglish}
+                  </p>
+                </div>
+
+                <div style={{ background: 'var(--miranda-paper-dark)', border: '1px solid var(--miranda-rule)', padding: 12 }}>
+                  <div style={{ fontFamily: 'var(--mono-code)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>
+                    Architecture Teardown: {buildersCorner.architectureTeardown?.system}
+                  </div>
+                  <p style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--miranda-ink-soft)' }}>
+                    <strong>Tradeoff:</strong> {buildersCorner.architectureTeardown?.tradeoff}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
