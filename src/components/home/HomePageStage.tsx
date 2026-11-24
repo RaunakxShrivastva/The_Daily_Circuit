@@ -25,20 +25,20 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
         }}
       />
 
-      {/* Renaissance Philosophers Debating AI Laptop Layer (Blended seamlessly over garden painting) */}
+      {/* Renaissance Philosophers Debating AI Laptop - Compact Centered Vignette */}
       <div 
-        className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0"
+        className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 w-[440px] max-w-[85vw] flex items-center justify-center"
       >
         <img 
           src="/images/philosophers_laptop.jpg" 
           alt="Philosophers with laptop"
-          className="w-full h-full object-cover object-bottom transition-all duration-700"
+          className="w-full h-auto object-contain transition-all duration-700"
           style={{
             mixBlendMode: "screen",
-            opacity: 0.88,
-            filter: "contrast(1.1) saturate(1.1)",
-            maskImage: "radial-gradient(ellipse 90% 80% at 50% 60%, black 50%, transparent 95%)",
-            WebkitMaskImage: "radial-gradient(ellipse 90% 80% at 50% 60%, black 50%, transparent 95%)",
+            opacity: 0.82,
+            filter: "contrast(1.15) saturate(1.1)",
+            maskImage: "radial-gradient(ellipse 85% 75% at 50% 50%, black 50%, transparent 92%)",
+            WebkitMaskImage: "radial-gradient(ellipse 85% 75% at 50% 50%, black 50%, transparent 92%)",
           }}
         />
       </div>
