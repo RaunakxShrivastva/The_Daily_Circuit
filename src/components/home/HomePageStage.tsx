@@ -25,6 +25,24 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
         }}
       />
 
+      {/* Renaissance Philosophers Debating AI Laptop Layer (Blended seamlessly over garden painting) */}
+      <div 
+        className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0"
+      >
+        <img 
+          src="/images/philosophers_laptop.jpg" 
+          alt="Philosophers with laptop"
+          className="w-full h-full object-cover object-bottom transition-all duration-700"
+          style={{
+            mixBlendMode: "screen",
+            opacity: 0.88,
+            filter: "contrast(1.1) saturate(1.1)",
+            maskImage: "radial-gradient(ellipse 90% 80% at 50% 60%, black 50%, transparent 95%)",
+            WebkitMaskImage: "radial-gradient(ellipse 90% 80% at 50% 60%, black 50%, transparent 95%)",
+          }}
+        />
+      </div>
+
       {/* Top Floating Badge & Hero Greeting */}
       <div className="relative z-10 max-w-5xl mx-auto w-full text-center space-y-4 pt-4">
         {/* Apple Liquid Glass Pill Badge */}
