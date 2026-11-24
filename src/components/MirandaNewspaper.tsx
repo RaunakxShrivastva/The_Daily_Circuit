@@ -21,7 +21,14 @@ import {
   Send,
   X,
   Play,
-  RotateCcw
+  RotateCcw,
+  Zap,
+  AlertTriangle,
+  DollarSign,
+  Server,
+  Activity,
+  Briefcase,
+  Code2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Story, Edition } from '../data/types';
@@ -31,11 +38,140 @@ import { EDITION as STATIC_EDITION } from '../data/edition';
 import { StoryReader } from './StoryReader';
 
 const PAGE_SECTIONS = [
-  { id: 'page-01', num: '01', roman: 'I', label: 'Front & Live Wire', short: 'Front Wire', edge: 'PAGE 01 · WIRE' },
-  { id: 'page-02', num: '02', roman: 'II', label: 'The Dev Classifieds', short: 'Classifieds', edge: 'PAGE 02 · REPOS' },
-  { id: 'page-03', num: '03', roman: 'III', label: 'Keynotes & Multimedia', short: 'Keynotes', edge: 'PAGE 03 · DISPATCH' },
-  { id: 'page-04', num: '04', roman: 'IV', label: 'Evidence Desk & Audit', short: 'Audit Desk', edge: 'PAGE 04 · EVIDENCE' },
-  { id: 'page-05', num: '05', roman: 'V', label: 'Telegraph & Print', short: 'Subscribe', edge: 'PAGE 05 · PRINT' }
+  { id: 'page-01', num: '01', roman: 'I', label: 'Front Page & Wire', short: 'Front Wire', edge: 'PAGE 01 · WIRE' },
+  { id: 'page-02', num: '02', roman: 'II', label: 'Compute & GPU Weather', short: 'Compute', edge: 'PAGE 02 · GPU' },
+  { id: 'page-03', num: '03', roman: 'III', label: 'Post-Mortem & Incident Desk', short: 'Post-Mortem', edge: 'PAGE 03 · OUTAGES' },
+  { id: 'page-04', num: '04', roman: 'IV', label: 'Dev Classifieds & Bounties', short: 'Bounties', edge: 'PAGE 04 · BOUNTIES' },
+  { id: 'page-05', num: '05', roman: 'V', label: 'Silicon & Hardware Foundry', short: 'Silicon', edge: 'PAGE 05 · CHIPS' },
+  { id: 'page-06', num: '06', roman: 'VI', label: 'Keynotes & Video Dispatches', short: 'Keynotes', edge: 'PAGE 06 · MEDIA' },
+  { id: 'page-07', num: '07', roman: 'VII', label: 'Evidence Desk & Audit', short: 'Audit Desk', edge: 'PAGE 07 · EVIDENCE' },
+  { id: 'page-08', num: '08', roman: 'VIII', label: 'Telegraph & Print', short: 'Telegraph', edge: 'PAGE 08 · PRINT' }
+];
+
+const GPU_WEATHER = [
+  { chip: 'NVIDIA H100 SXM5 (80GB)', provider: 'Lambda / Crusoe', rate: '$2.49/hr', status: 'Optimal', statusClass: 'opt', mem: '3.35 TB/s HBM3' },
+  { chip: 'NVIDIA H200 (141GB)', provider: 'RunPod / CoreWeave', rate: '$3.85/hr', status: 'Tight Queue', statusClass: 'tight', mem: '4.8 TB/s HBM3e' },
+  { chip: 'NVIDIA B200 NVL72', provider: 'Azure / GCP Preview', rate: '$7.20/hr', status: 'Gated Access', statusClass: 'gate', mem: '8.0 TB/s HBM3e' },
+  { chip: 'NVIDIA RTX 4090 (24GB)', provider: 'Vast.ai / Tensordock', rate: '$0.58/hr', status: 'High Surplus', statusClass: 'opt', mem: '1.0 TB/s GDDR6X' },
+  { chip: 'Groq LP8 LPU Rack', provider: 'GroqCloud Direct', rate: '$0.95/hr', status: '480 Tok/s', statusClass: 'opt', mem: '230 MB SRAM @ 80TB/s' },
+  { chip: 'Apple M4 Max (128GB)', provider: 'Local Metal Harness', rate: '$0.00 eq.', status: 'Local Node', statusClass: 'opt', mem: '546 GB/s Unified' }
+];
+
+const TOKEN_PRICING = [
+  { model: 'DeepSeek-V3 / R1', provider: 'Fireworks / Together', ctx: '128K', input: '$0.14', output: '$0.28', speed: '118 tok/s', signal: '★ ★ ★ ★ ★ (Cost Champion)' },
+  { model: 'Gemini 1.5 Flash', provider: 'Google Cloud Vertex', ctx: '1,000K', input: '$0.075', output: '$0.30', speed: '142 tok/s', signal: '★ ★ ★ ★ ★ (Context King)' },
+  { model: 'Claude 3.5 Sonnet', provider: 'Anthropic Direct', ctx: '200K', input: '$3.00', output: '$15.00', speed: '68 tok/s', signal: '★ ★ ★ ★ ☆ (Coding Gold)' },
+  { model: 'GPT-4o mini', provider: 'OpenAI Platform', ctx: '128K', input: '$0.15', output: '$0.60', speed: '96 tok/s', signal: '★ ★ ★ ★ ☆ (Fast General)' }
+];
+
+const LEAD_INCIDENT = {
+  title: 'Cascade of the Sharded Leaky Bucket: How a Cluster Slot Rebalance Toppled Edge Inference',
+  system: 'Distributed LLM Gateway & Rate-Limiter',
+  impact: '28-minute partial timeout surge across US-East and EU-West edge routing clusters.',
+  rootCause: 'During automated Redis cluster slot migration under peak traffic, token bucket state was momentarily partitioned. Client SDKs received HTTP 429 reset headers with zero backoff, triggering an immediate thundering herd against backend vLLM worker nodes.',
+  badCode: `- // Vulnerable: Non-atomic split-read during cluster resharding
+- int currentTokens = redisClient.get("bucket:" + apiKey);
+- if (currentTokens > 0) { redisClient.decr("bucket:" + apiKey); }`,
+  fixCode: `+ // Patched: Atomic Lua CAS script with local token refill & exponential backoff
++ String LUA_CAS = "if redis.call('get', KEYS[1]) > '0' then return redis.call('decr', KEYS[1]) else return -1 end";
++ redisClient.eval(LUA_CAS, 1, "bucket:" + apiKey);`,
+  resolution: 'Switched rate-limiting to atomic Lua CAS with local in-memory token buffering, and deployed client jittered exponential backoff.'
+};
+
+const SUB_INCIDENTS = [
+  {
+    title: 'CUDA OOM on Speculative Chunked Prefill',
+    summary: 'Non-contiguous allocation in vLLM paged attention exceeded PyTorch caching allocator head by 8MB during 64-request concurrent batch.',
+    fix: 'Strict `--gpu-memory-utilization 0.92` + offloading prefill heads to pinned CPU RAM.'
+  },
+  {
+    title: 'Silent Memory Bleed in Multi-Turn Agent Loop',
+    summary: 'Autonomous sub-agent tool calls accumulated raw JSON stack traces in persistent prompt history without token truncation guards.',
+    fix: 'Rolling sliding-window summary checkpoint with strict 4,096-token tool call window.'
+  },
+  {
+    title: 'DNS Resolver Socket Exhaustion under 10k Container Spin-up',
+    summary: 'Ephemeral inference workers spawned simultaneously in Kubernetes cluster overwhelmed upstream CoreDNS pods with UDP floods.',
+    fix: 'Deployed local NodeLocal DNSCache DaemonSet with connection pooling.'
+  }
+];
+
+const OPEN_SOURCE_BOUNTIES = [
+  {
+    issue: 'Optimize vLLM Triton PagedAttention Kernel for AMD ROCm 6.2 CDNA3',
+    repo: 'vllm-project/vllm',
+    bounty: '$850 USD',
+    stack: 'Triton / C++ / ROCm',
+    why: 'Enables 1.4x faster prefill on Instinct MI300X clusters.',
+    url: 'https://github.com/vllm-project/vllm'
+  },
+  {
+    issue: 'Implement FP8 GEMM Matrix Kernel in Pure WebGPU for In-Browser Inference',
+    repo: 'xenova/transformers.js',
+    bounty: '$500 USD',
+    stack: 'WebGPU / WGSL / TypeScript',
+    why: 'Allows 8B quantized models to run client-side at 25+ tokens/sec inside Google Chrome.',
+    url: 'https://github.com/xenova/transformers.js'
+  },
+  {
+    issue: 'Fix Distributed Checkpoint Resume Race Condition in Megatron-LM Pipeline Parallel',
+    repo: 'NVIDIA/Megatron-LM',
+    bounty: '$1,000 USD',
+    stack: 'Python / PyTorch Distributed / NCCL',
+    why: 'Eliminates 45-minute training restart hangs when resuming 70B+ model training jobs.',
+    url: 'https://github.com/NVIDIA/Megatron-LM'
+  },
+  {
+    issue: 'Add Streaming Structured JSON Schema Validation Engine in Pure Rust',
+    repo: 'ollama/ollama',
+    bounty: '$350 USD',
+    stack: 'Rust / Parser Combinators',
+    why: 'Guarantees zero invalid JSON output from local agent harnesses during real-time streaming.',
+    url: 'https://github.com/ollama/ollama'
+  }
+];
+
+const HIGH_SIGNAL_ROLES = [
+  {
+    title: 'Founding Kernel & Inference Engineer',
+    company: 'Reflection AI · Remote / SF',
+    salary: '$220,000 – $310,000 + 0.75% Equity',
+    stack: ['Triton', 'CUDA C++', 'vLLM', 'FlashAttention']
+  },
+  {
+    title: 'Distributed Systems Infrastructure Lead',
+    company: 'Agent Substrate · Remote Worldwide',
+    salary: '$195,000 – $265,000 + Equity',
+    stack: ['Rust', 'Go', 'Raft Consensus', 'eBPF']
+  },
+  {
+    title: 'Edge AI Acceleration Specialist',
+    company: 'Thinking Machines · London / Remote',
+    salary: '£130,000 – £180,000 + Token Pool',
+    stack: ['Metal', 'WebGPU', 'ONNX Runtime', 'Zig']
+  }
+];
+
+const HARDWARE_SPECS = [
+  { chip: 'NVIDIA Blackwell B200', arch: 'Dual-Die CoWoS-L (TSMC 4NP)', mem: '192GB HBM3e', bw: '8.0 TB/s', fp8Tflops: '4,500', target: 'Frontier Pretraining & Dense Inference' },
+  { chip: 'AMD Instinct MI325X', arch: '8x XCD Chiplets (TSMC 5/6nm)', mem: '256GB HBM3e', bw: '6.0 TB/s', fp8Tflops: '2,614', target: 'Large-Memory Model Serving' },
+  { chip: 'Groq LPU (LP8 Engine)', arch: 'Monolithic TSP (GlobalFoundries 14nm)', mem: '230MB On-Chip SRAM', bw: '80.0 TB/s', fp8Tflops: '750', target: 'Ultra-Low Latency Inference (<20ms)' },
+  { chip: 'Tenstorrent Wormhole n300', arch: 'Dual Tensix Core (TSMC 12nm)', mem: '24GB GDDR6', bw: '576 GB/s', fp8Tflops: '520', target: 'Open-Architecture RISC-V Compute' }
+];
+
+const FOUNDRY_DISPATCHES = [
+  {
+    title: 'TSMC A16 & SuperPower Backside Power Delivery',
+    text: 'TSMC announced volume production timelines for A16 (1.6nm class) featuring SuperPower Backside Power Delivery Network (BSPDN). Routing power rails to the rear of the silicon wafer eliminates IR drop resistance and frees up 20% interconnect area for compute transistors.'
+  },
+  {
+    title: 'ASML High-NA EUV Scanner (EXE:5000) Prints 8nm Pitch',
+    text: 'Intel Fab 34 in Ireland and Oregon R&D facilities completed initial trial runs on ASML High-NA 0.55 numerical aperture lithography tools, demonstrating single-exposure resolution of 8nm metal pitch without triple-patterning masks.'
+  },
+  {
+    title: 'HBM4 Architecture Shifts to Custom 4nm Logic Base Dies',
+    text: 'JEDEC completed the HBM4 specification, featuring 2048-bit memory bus interfaces. Unlike HBM3e where base dies were manufactured on standard DRAM processes, HBM4 base logic dies will be fabricated on advanced TSMC 4nm and 3nm nodes for direct on-interposer compute routing.'
+  }
 ];
 
 export function MirandaNewspaper() {
@@ -240,7 +376,7 @@ export function MirandaNewspaper() {
           </button>
           <button 
             className="miranda-hud__btn"
-            onClick={() => scrollToSection('page-05')}
+            onClick={() => scrollToSection('page-08')}
           >
             Subscribe to Print
           </button>
@@ -309,13 +445,13 @@ export function MirandaNewspaper() {
         {/* Section Navigation Bar (Smooth Page Jump + Category Filter) */}
         <nav className="miranda-nav-bar">
           <div className="miranda-nav-bar__links">
-            {PAGE_SECTIONS.slice(0, 4).map((sec) => (
+            {PAGE_SECTIONS.map((sec) => (
               <button 
                 key={sec.id}
                 className={`miranda-nav-bar__item ${activeSection === sec.id ? 'is-active' : ''}`}
                 onClick={() => scrollToSection(sec.id)}
               >
-                {sec.num} / {sec.label}
+                {sec.num} / {sec.short}
               </button>
             ))}
           </div>
@@ -452,89 +588,375 @@ export function MirandaNewspaper() {
         </section>
 
         {/* ========================================================
-            PAGE 02: GITHUB TRENDING (The Dev Classifieds)
+            PAGE 02: ⚡ THE COMPUTE & GPU WEATHER DESK
             ======================================================== */}
         <div className="miranda-folio-divider">
           <span>THE DAILY CIRCUIT · VOL. XXIV</span>
           <div className="miranda-folio-divider__center">
             <span className="miranda-folio-divider__pill">PAGE 02</span>
-            <span>THE DEV CLASSIFIEDS · GITHUB TRENDING REPOSITORIES</span>
+            <span>THE COMPUTE &amp; GPU WEATHER DESK · INFERENCE &amp; SPOT INDEX</span>
           </div>
-          <span>SECTION B · WORLDWIDE WIRE</span>
+          <span>SECTION B · INFRASTRUCTURE</span>
         </div>
 
         <section id="page-02" className="miranda-page-section">
-          <div className="miranda-page-edge-tag">PAGE 02 · CLASSIFIEDS</div>
-          <div className="miranda-classifieds">
-            <div className="miranda-classifieds__banner">
-              <Terminal size={20} />
-              <div>
-                <h2>THE DEV CLASSIFIEDS — TOP REPOSITORIES OF TODAY</h2>
-                <p>Scraped directly from the GitHub firehose. Ranked by star velocity over the last 7 days.</p>
-              </div>
+          <div className="miranda-page-edge-tag">PAGE 02 · GPU</div>
+          
+          <div className="miranda-section-header">
+            <div>
+              <h2>THE COMPUTE &amp; GPU WEATHER DESK</h2>
+              <p>Daily hardware spot availability, cloud inference $/1M token pricing, and edge latency telemetry.</p>
             </div>
+            <Zap size={22} className="text-amber-600" />
+          </div>
 
-            <div className="miranda-repo-grid">
-              {githubRepos.length === 0 ? (
-                <div className="miranda-empty-state">Loading GitHub telemetry...</div>
-              ) : (
-                githubRepos.map((repo, i) => (
-                  <div key={repo.id} className="miranda-repo-card">
-                    <div className="miranda-repo-card__header">
-                      <span className="miranda-repo-card__num">{String(i + 1).padStart(2, '0')}</span>
-                      <span className="miranda-repo-card__lang">
-                        <span className="lang-circle" /> {repo.language || 'Code'}
-                      </span>
-                      <span className="miranda-repo-card__stars">
-                        <Star size={13} fill="#d4af37" color="#d4af37" /> {repo.stars.toLocaleString()}
-                      </span>
-                    </div>
+          {/* GPU Spot Rates Grid */}
+          <div className="miranda-gpu-ticker-grid">
+            {GPU_WEATHER.map((gpu, i) => (
+              <div key={i} className="miranda-gpu-card">
+                <div>
+                  <div className="miranda-gpu-card__chip">{gpu.chip}</div>
+                  <div className="miranda-gpu-card__provider">{gpu.provider} · {gpu.mem}</div>
+                </div>
+                <div className="miranda-gpu-card__price-row">
+                  <span className="miranda-gpu-card__rate">{gpu.rate}</span>
+                  <span className={`miranda-gpu-card__status miranda-gpu-card__status--${gpu.statusClass}`}>
+                    {gpu.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
 
-                    <h3 className="miranda-repo-card__name">
-                      <a href={repo.url} target="_blank" rel="noreferrer">
-                        {repo.fullName}
-                      </a>
-                    </h3>
+          {/* Inference Token Pricing Table */}
+          <div className="miranda-table-container">
+            <table className="miranda-table">
+              <thead>
+                <tr>
+                  <th>Model / Harness</th>
+                  <th>Cloud Provider</th>
+                  <th>Max Context</th>
+                  <th>Input $/1M</th>
+                  <th>Output $/1M</th>
+                  <th>Speed (t/s)</th>
+                  <th>Efficiency Signal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {TOKEN_PRICING.map((tp, idx) => (
+                  <tr key={idx}>
+                    <td className="bold-cell">{tp.model}</td>
+                    <td>{tp.provider}</td>
+                    <td><span className="repo-tag">{tp.ctx}</span></td>
+                    <td className="font-mono text-emerald-800 font-bold">{tp.input}</td>
+                    <td className="font-mono text-emerald-800 font-bold">{tp.output}</td>
+                    <td><span className="font-mono font-semibold">{tp.speed}</span></td>
+                    <td><span className="verified-badge">{tp.signal}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-                    <p className="miranda-repo-card__desc">
-                      {repo.description || 'Open-source experimental artificial intelligence framework.'}
-                    </p>
-
-                    <div className="miranda-repo-card__tags">
-                      {repo.topics.slice(0, 3).map(t => (
-                        <span key={t} className="repo-tag">#{t}</span>
-                      ))}
-                    </div>
-
-                    <div className="miranda-repo-card__action">
-                      <a href={repo.url} target="_blank" rel="noreferrer" className="clone-btn">
-                        Inspect Repository <ArrowUpRight size={13} />
-                      </a>
-                      <span className="fork-count">
-                        <GitFork size={12} /> {repo.forks.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
+          {/* Latency & Grid Telemetry */}
+          <div className="miranda-latency-row">
+            <div className="miranda-latency-pill">
+              <span className="miranda-latency-dot" />
+              <span>US-EAST (VIRGINIA): 18ms · PUE 1.12</span>
+            </div>
+            <div className="miranda-latency-pill">
+              <span className="miranda-latency-dot" />
+              <span>US-WEST (OREGON): 24ms · 100% HYDRO</span>
+            </div>
+            <div className="miranda-latency-pill">
+              <span className="miranda-latency-dot" />
+              <span>EU-CENTRAL (FRANKFURT): 31ms · WIND OFFSET</span>
+            </div>
+            <div className="miranda-latency-pill">
+              <span className="miranda-latency-dot" />
+              <span>AP-SOUTH (MUMBAI): 42ms · PEAK SOLAR</span>
             </div>
           </div>
         </section>
 
         {/* ========================================================
-            PAGE 03: MULTIMEDIA & TECHNICAL KEYNOTES
+            PAGE 03: 💥 THE POST-MORTEM & INCIDENT DESK
             ======================================================== */}
         <div className="miranda-folio-divider">
           <span>THE DAILY CIRCUIT · VOL. XXIV</span>
           <div className="miranda-folio-divider__center">
             <span className="miranda-folio-divider__pill">PAGE 03</span>
-            <span>TECHNICAL DISPATCHES &amp; VIDEO ARCHIVES</span>
+            <span>THE POST-MORTEM DESK · 24H SYSTEMS BREAKDOWNS &amp; PATCH DIFFS</span>
           </div>
-          <span>SECTION C · ARCHIVE DESK</span>
+          <span>SECTION C · RESILIENCE</span>
         </div>
 
         <section id="page-03" className="miranda-page-section">
-          <div className="miranda-page-edge-tag">PAGE 03 · DISPATCHES</div>
+          <div className="miranda-page-edge-tag">PAGE 03 · OUTAGES</div>
+
+          <div className="miranda-section-header">
+            <div>
+              <h2>THE POST-MORTEM &amp; INCIDENT AUDIT DESK</h2>
+              <p>Unvarnished architectural post-mortems of real distributed system failures, deadlock conditions, and patch code diffs.</p>
+            </div>
+            <AlertTriangle size={22} className="text-red-600" />
+          </div>
+
+          {/* Lead Incident Teardown */}
+          <article className="miranda-incident-lead">
+            <div className="miranda-incident-badge-row">
+              <span className="miranda-badge-incident">PRODUCTION SEV-1</span>
+              <span className="miranda-badge-time"><Clock size={12} /> Target: {LEAD_INCIDENT.system}</span>
+            </div>
+
+            <h3 className="miranda-incident-title">{LEAD_INCIDENT.title}</h3>
+            <p className="miranda-incident-impact">Impact: {LEAD_INCIDENT.impact}</p>
+
+            <div className="miranda-incident-grid">
+              <div className="miranda-incident-analysis">
+                <h4>Root Cause Breakdown</h4>
+                <p>{LEAD_INCIDENT.rootCause}</p>
+                <div style={{ marginTop: 14 }}>
+                  <h4>Architectural Resolution</h4>
+                  <p>{LEAD_INCIDENT.resolution}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ fontFamily: 'var(--mono-code)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+                  Verified Patch Code Diff
+                </h4>
+                <div className="miranda-diff-box">
+                  <div className="diff-meta">@@ -14,4 +14,5 @@ rate_limiter.py (atomic CAS fix)</div>
+                  <div className="diff-del">{LEAD_INCIDENT.badCode}</div>
+                  <div className="diff-add">{LEAD_INCIDENT.fixCode}</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          {/* Three Sub-Incident Cards */}
+          <div className="miranda-sub-incidents-grid">
+            {SUB_INCIDENTS.map((inc, i) => (
+              <div key={i} className="miranda-sub-incident-card">
+                <h4>{inc.title}</h4>
+                <p>{inc.summary}</p>
+                <div className="miranda-fix-tag">Patch: {inc.fix}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ========================================================
+            PAGE 04: 💼 THE DEV CLASSIFIEDS & TERMINAL BOUNTIES
+            ======================================================== */}
+        <div className="miranda-folio-divider">
+          <span>THE DAILY CIRCUIT · VOL. XXIV</span>
+          <div className="miranda-folio-divider__center">
+            <span className="miranda-folio-divider__pill">PAGE 04</span>
+            <span>THE DEV CLASSIFIEDS · GITHUB TRENDING &amp; CASH BOUNTIES</span>
+          </div>
+          <span>SECTION D · BUILDERS</span>
+        </div>
+
+        <section id="page-04" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 04 · BOUNTIES</div>
+
+          <div className="miranda-classifieds__banner">
+            <Terminal size={20} />
+            <div>
+              <h2>THE DEV CLASSIFIEDS — TOP REPOSITORIES &amp; CASH BOUNTIES</h2>
+              <p>Curated from the GitHub firehose and open-source bounty ledgers. Zero recruiter spam.</p>
+            </div>
+          </div>
+
+          {/* Repositories Grid */}
+          <div className="miranda-repo-grid">
+            {githubRepos.length === 0 ? (
+              <div className="miranda-empty-state">Loading GitHub telemetry...</div>
+            ) : (
+              githubRepos.slice(0, 4).map((repo, i) => (
+                <div key={repo.id} className="miranda-repo-card">
+                  <div className="miranda-repo-card__header">
+                    <span className="miranda-repo-card__num">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="miranda-repo-card__lang">
+                      <span className="lang-circle" /> {repo.language || 'Code'}
+                    </span>
+                    <span className="miranda-repo-card__stars">
+                      <Star size={13} fill="#d4af37" color="#d4af37" /> {repo.stars.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <h3 className="miranda-repo-card__name">
+                    <a href={repo.url} target="_blank" rel="noreferrer">
+                      {repo.fullName}
+                    </a>
+                  </h3>
+
+                  <p className="miranda-repo-card__desc">
+                    {repo.description || 'Open-source experimental artificial intelligence framework.'}
+                  </p>
+
+                  <div className="miranda-repo-card__tags">
+                    {repo.topics.slice(0, 3).map(t => (
+                      <span key={t} className="repo-tag">#{t}</span>
+                    ))}
+                  </div>
+
+                  <div className="miranda-repo-card__action">
+                    <a href={repo.url} target="_blank" rel="noreferrer" className="clone-btn">
+                      Inspect Repository <ArrowUpRight size={13} />
+                    </a>
+                    <span className="fork-count">
+                      <GitFork size={12} /> {repo.forks.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Bounties and Jobs 2-Column Spread */}
+          <div className="miranda-bounty-columns">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <DollarSign size={16} className="text-emerald-700" />
+                <h3 style={{ fontFamily: 'var(--serif-title)', fontSize: 18, color: 'var(--miranda-ink)' }}>
+                  Active Open-Source Cash Bounties
+                </h3>
+              </div>
+
+              {OPEN_SOURCE_BOUNTIES.map((b, i) => (
+                <div key={i} className="miranda-bounty-card">
+                  <div className="miranda-bounty-card__header">
+                    <span className="font-mono text-xs text-neutral-600 font-bold">{b.repo}</span>
+                    <span className="miranda-bounty-amount">{b.bounty}</span>
+                  </div>
+                  <h4>{b.issue}</h4>
+                  <p>{b.why}</p>
+                  <div className="miranda-bounty-footer">
+                    <span className="text-neutral-500 font-mono">Stack: {b.stack}</span>
+                    <a href={b.url} target="_blank" rel="noreferrer" className="miranda-claim-btn">
+                      Claim Bounty <ArrowUpRight size={11} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <Briefcase size={16} className="text-blue-700" />
+                <h3 style={{ fontFamily: 'var(--serif-title)', fontSize: 18, color: 'var(--miranda-ink)' }}>
+                  High-Signal Engineering Roles
+                </h3>
+              </div>
+
+              {HIGH_SIGNAL_ROLES.map((job, idx) => (
+                <div key={idx} className="miranda-job-card">
+                  <h4>{job.title}</h4>
+                  <div className="miranda-job-company">{job.company}</div>
+                  <div className="miranda-job-salary">{job.salary}</div>
+                  <div className="miranda-job-stack">
+                    {job.stack.map(st => (
+                      <span key={st} className="miranda-job-pill">{st}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================================
+            PAGE 05: 🔬 THE SILICON & HARDWARE FOUNDRY
+            ======================================================== */}
+        <div className="miranda-folio-divider">
+          <span>THE DAILY CIRCUIT · VOL. XXIV</span>
+          <div className="miranda-folio-divider__center">
+            <span className="miranda-folio-divider__pill">PAGE 05</span>
+            <span>THE SILICON FOUNDRY · WAFERS, ACCELERATORS &amp; LITHOGRAPHY</span>
+          </div>
+          <span>SECTION E · HARDWARE</span>
+        </div>
+
+        <section id="page-05" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 05 · CHIPS</div>
+
+          <div className="miranda-section-header">
+            <div>
+              <h2>THE SILICON FOUNDRY &amp; HARDWARE LEDGER</h2>
+              <p>Physical computing analysis: Advanced packaging, High-NA EUV lithography, and sovereign accelerator silicon.</p>
+            </div>
+            <Cpu size={22} className="text-indigo-700" />
+          </div>
+
+          <div className="miranda-foundry-grid">
+            <div className="miranda-foundry-lead">
+              <span className="miranda-badge-kicker">PHYSICAL PROCESS SCALING</span>
+              <h3>Sub-2nm Nanosheet Transitions: How Backside Power Delivery Rescues Clock Speeds</h3>
+              <p>
+                As transistor gate lengths shrink below 2 nanometers, parasitic RC delay in conventional front-side metallization stacks has become the dominant bottleneck to clock frequencies. 
+                Both TSMC (A16) and Intel (18A) have confirmed production timelines for Backside Power Delivery Networks (BSPDN).
+              </p>
+              <p>
+                By shifting heavy VDD power rails to the reverse side of the polished wafer, routing congestion is reduced by 20%, IR drop voltage sag is minimized, and standard cells can pack up to 1.28x more compute logic per square millimeter.
+              </p>
+            </div>
+
+            <div className="miranda-foundry-side">
+              {FOUNDRY_DISPATCHES.map((d, i) => (
+                <div key={i} className="miranda-foundry-bullet">
+                  <h4>{d.title}</h4>
+                  <p>{d.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Hardware Specs Comparison Table */}
+          <div className="miranda-table-container">
+            <table className="miranda-table">
+              <thead>
+                <tr>
+                  <th>Accelerator Silicon</th>
+                  <th>Packaging / Fabrication</th>
+                  <th>On-Package Memory</th>
+                  <th>Memory Bandwidth</th>
+                  <th>FP8 Dense TFLOPS</th>
+                  <th>Primary Workload Sweet Spot</th>
+                </tr>
+              </thead>
+              <tbody>
+                {HARDWARE_SPECS.map((h, i) => (
+                  <tr key={i}>
+                    <td className="bold-cell">{h.chip}</td>
+                    <td>{h.arch}</td>
+                    <td><span className="repo-tag">{h.mem}</span></td>
+                    <td className="font-mono font-bold text-blue-900">{h.bw}</td>
+                    <td className="font-mono">{h.fp8Tflops}</td>
+                    <td><span className="verified-badge">{h.target}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ========================================================
+            PAGE 06: KEYNOTES & TECHNICAL DISPATCHES
+            ======================================================== */}
+        <div className="miranda-folio-divider">
+          <span>THE DAILY CIRCUIT · VOL. XXIV</span>
+          <div className="miranda-folio-divider__center">
+            <span className="miranda-folio-divider__pill">PAGE 06</span>
+            <span>TECHNICAL DISPATCHES &amp; VIDEO ARCHIVES</span>
+          </div>
+          <span>SECTION F · ARCHIVE DESK</span>
+        </div>
+
+        <section id="page-06" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 06 · MEDIA</div>
           <div className="miranda-multimedia">
             <div className="miranda-multimedia__hero">
               <div className="miranda-badge-kicker">FEATURED DISPATCH</div>
@@ -583,19 +1005,19 @@ export function MirandaNewspaper() {
         </section>
 
         {/* ========================================================
-            PAGE 04: EVIDENCE DESK & SOURCE AUDIT
+            PAGE 07: EVIDENCE DESK & SOURCE AUDIT
             ======================================================== */}
         <div className="miranda-folio-divider">
           <span>THE DAILY CIRCUIT · VOL. XXIV</span>
           <div className="miranda-folio-divider__center">
-            <span className="miranda-folio-divider__pill">PAGE 04</span>
+            <span className="miranda-folio-divider__pill">PAGE 07</span>
             <span>EDITORIAL EVIDENCE DESK &amp; AUDIT LEDGER</span>
           </div>
-          <span>SECTION D · PEER VERIFIED</span>
+          <span>SECTION G · PEER VERIFIED</span>
         </div>
 
-        <section id="page-04" className="miranda-page-section">
-          <div className="miranda-page-edge-tag">PAGE 04 · EVIDENCE</div>
+        <section id="page-07" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 07 · EVIDENCE</div>
           <div className="miranda-evidence-tab">
             <div className="miranda-evidence-tab__header">
               <h2>THE EDITORIAL EVIDENCE &amp; AUDIT LEDGER</h2>
@@ -642,19 +1064,19 @@ export function MirandaNewspaper() {
         </section>
 
         {/* ========================================================
-            PAGE 05: MORNING TELEGRAPH & SUBSCRIPTION
+            PAGE 08: MORNING TELEGRAPH & SUBSCRIPTION
             ======================================================== */}
         <div className="miranda-folio-divider">
           <span>THE DAILY CIRCUIT · VOL. XXIV</span>
           <div className="miranda-folio-divider__center">
-            <span className="miranda-folio-divider__pill">PAGE 05</span>
+            <span className="miranda-folio-divider__pill">PAGE 08</span>
             <span>MORNING TELEGRAPH &amp; PRINT SUBSCRIPTION</span>
           </div>
-          <span>CIRCULATION DESK</span>
+          <span>SECTION H · CIRCULATION DESK</span>
         </div>
 
-        <section id="page-05" className="miranda-page-section">
-          <div className="miranda-page-edge-tag">PAGE 05 · TELEGRAPH</div>
+        <section id="page-08" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 08 · PRINT</div>
           <div id="subscribe-section" className="miranda-subscribe-box">
             <div className="miranda-subscribe-box__inner">
               <div className="miranda-subscribe-box__text">
