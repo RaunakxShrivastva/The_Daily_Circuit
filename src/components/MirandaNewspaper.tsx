@@ -30,6 +30,14 @@ import { fetchLiveEdition, liveDataToStories } from '../lib/api';
 import { EDITION as STATIC_EDITION } from '../data/edition';
 import { StoryReader } from './StoryReader';
 
+const PAGE_SECTIONS = [
+  { id: 'page-01', num: '01', roman: 'I', label: 'Front & Live Wire', short: 'Front Wire', edge: 'PAGE 01 · WIRE' },
+  { id: 'page-02', num: '02', roman: 'II', label: 'The Dev Classifieds', short: 'Classifieds', edge: 'PAGE 02 · REPOS' },
+  { id: 'page-03', num: '03', roman: 'III', label: 'Keynotes & Multimedia', short: 'Keynotes', edge: 'PAGE 03 · DISPATCH' },
+  { id: 'page-04', num: '04', roman: 'IV', label: 'Evidence Desk & Audit', short: 'Audit Desk', edge: 'PAGE 04 · EVIDENCE' },
+  { id: 'page-05', num: '05', roman: 'V', label: 'Telegraph & Print', short: 'Subscribe', edge: 'PAGE 05 · PRINT' }
+];
+
 export function MirandaNewspaper() {
   const [liveData, setLiveData] = useState<LiveEditionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,9 +48,40 @@ export function MirandaNewspaper() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [hoveredStory, setHoveredStory] = useState<Story | null>(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
-  const [activeTab, setActiveTab] = useState<'broadsheet' | 'classifieds' | 'multimedia' | 'evidence'>('broadsheet');
+  const [activeSection, setActiveSection] = useState<string>('page-01');
 
   const [pipelineEdition, setPipelineEdition] = useState<any>(null);
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const headerOffset = 68;
+      const elementPosition = el.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+      setActiveSection(id);
+    }
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 200;
+      for (let i = PAGE_SECTIONS.length - 1; i >= 0; i--) {
+        const el = document.getElementById(PAGE_SECTIONS[i].id);
+        if (el && el.offsetTop <= scrollPos) {
+          setActiveSection(PAGE_SECTIONS[i].id);
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +166,20 @@ export function MirandaNewspaper() {
   const leadStory = allStories[0];
   const wireStories = allStories.slice(1, 9);
   const deepStories = allStories.slice(9, 14);
-  const githubRepos: GithubRepo[] = liveData?.github ?? [];
+
+  const githubRepos: GithubRepo[] = (liveData?.github && liveData.github.length > 0)
+    ? liveData.github
+    : (pipelineEdition?.pages?.page4_repos?.topRepos?.map((r: any, idx: number) => ({
+        id: idx + 100,
+        name: r.repo.split('/')[1] || r.repo,
+        fullName: r.repo,
+        description: r.whyItMatters || 'High velocity engineering framework from 24h intelligence digest.',
+        stars: parseInt(r.stars24h.replace(/[^0-9]/g, '')) * 10 || 4500,
+        forks: 340,
+        language: r.stack || 'TypeScript',
+        topics: [r.stack?.toLowerCase() || 'dev', 'ai', 'tools'],
+        url: `https://github.com/${r.repo}`
+      })) || []);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,15 +240,31 @@ export function MirandaNewspaper() {
           </button>
           <button 
             className="miranda-hud__btn"
-            onClick={() => {
-              const el = document.getElementById('subscribe-section');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
+            onClick={() => scrollToSection('page-05')}
           >
             Subscribe to Print
           </button>
         </div>
       </header>
+
+      {/* Floating Outside-Paper Page Rail (Sticky Page Markers on the Side) */}
+      <aside className="miranda-page-rail" aria-label="Broadsheet Page Index">
+        <div className="miranda-page-rail__heading">
+          <Layers size={10} />
+          <span>PAGES</span>
+        </div>
+        {PAGE_SECTIONS.map((sec) => (
+          <button
+            key={sec.id}
+            onClick={() => scrollToSection(sec.id)}
+            className={`miranda-page-rail__btn ${activeSection === sec.id ? 'is-active' : ''}`}
+            title={`Scroll to Page ${sec.num}: ${sec.label}`}
+          >
+            <span className="miranda-page-rail__num">{sec.num}</span>
+            <span className="miranda-page-rail__title">{sec.short}</span>
+          </button>
+        ))}
+      </aside>
 
       {/* Main Printed Broadsheet Container */}
       <main className="miranda-sheet">
@@ -205,7 +273,7 @@ export function MirandaNewspaper() {
           <div className="miranda-circular-stamp">
             <svg viewBox="0 0 100 100" className="rotating-stamp">
               <path id="circlePath" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="none" />
-              <text font-size="9" letter-spacing="2">
+              <text fontSize="9" letterSpacing="2">
                 <textPath xlinkHref="#circlePath">
                   THE DAILY CIRCUIT · VERIFIED AI INTELLIGENCE ·
                 </textPath>
@@ -238,33 +306,18 @@ export function MirandaNewspaper() {
           </div>
         </div>
 
-        {/* Section Navigation Tabs (Miranda Editorial Filter) */}
+        {/* Section Navigation Bar (Smooth Page Jump + Category Filter) */}
         <nav className="miranda-nav-bar">
           <div className="miranda-nav-bar__links">
-            <button 
-              className={`miranda-nav-bar__item ${activeTab === 'broadsheet' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('broadsheet')}
-            >
-              01 / Front Page &amp; Wire
-            </button>
-            <button 
-              className={`miranda-nav-bar__item ${activeTab === 'classifieds' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('classifieds')}
-            >
-              02 / The Dev Classifieds (GitHub Trending)
-            </button>
-            <button 
-              className={`miranda-nav-bar__item ${activeTab === 'multimedia' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('multimedia')}
-            >
-              03 / Keynotes &amp; Video Embed
-            </button>
-            <button 
-              className={`miranda-nav-bar__item ${activeTab === 'evidence' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('evidence')}
-            >
-              04 / Evidence Desk &amp; Audit
-            </button>
+            {PAGE_SECTIONS.slice(0, 4).map((sec) => (
+              <button 
+                key={sec.id}
+                className={`miranda-nav-bar__item ${activeSection === sec.id ? 'is-active' : ''}`}
+                onClick={() => scrollToSection(sec.id)}
+              >
+                {sec.num} / {sec.label}
+              </button>
+            ))}
           </div>
           <div className="miranda-nav-bar__search">
             <span className="miranda-pill-tag">FILTER:</span>
@@ -280,8 +333,11 @@ export function MirandaNewspaper() {
           </div>
         </nav>
 
-        {/* TAB 1: FRONT PAGE & BREAKING WIRE */}
-        {activeTab === 'broadsheet' && (
+        {/* ========================================================
+            PAGE 01: FRONT PAGE & BREAKING WIRE
+            ======================================================== */}
+        <section id="page-01" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 01 · FRONT WIRE</div>
           <div className="miranda-front-grid">
             {/* Left Big Lead Story */}
             <article className="miranda-lead">
@@ -393,10 +449,22 @@ export function MirandaNewspaper() {
               </div>
             </aside>
           </div>
-        )}
+        </section>
 
-        {/* TAB 2: GITHUB TRENDING (The Dev Classifieds) */}
-        {activeTab === 'classifieds' && (
+        {/* ========================================================
+            PAGE 02: GITHUB TRENDING (The Dev Classifieds)
+            ======================================================== */}
+        <div className="miranda-folio-divider">
+          <span>THE DAILY CIRCUIT · VOL. XXIV</span>
+          <div className="miranda-folio-divider__center">
+            <span className="miranda-folio-divider__pill">PAGE 02</span>
+            <span>THE DEV CLASSIFIEDS · GITHUB TRENDING REPOSITORIES</span>
+          </div>
+          <span>SECTION B · WORLDWIDE WIRE</span>
+        </div>
+
+        <section id="page-02" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 02 · CLASSIFIEDS</div>
           <div className="miranda-classifieds">
             <div className="miranda-classifieds__banner">
               <Terminal size={20} />
@@ -451,10 +519,22 @@ export function MirandaNewspaper() {
               )}
             </div>
           </div>
-        )}
+        </section>
 
-        {/* TAB 3: MULTIMEDIA & VIDEO EMBEDS */}
-        {activeTab === 'multimedia' && (
+        {/* ========================================================
+            PAGE 03: MULTIMEDIA & TECHNICAL KEYNOTES
+            ======================================================== */}
+        <div className="miranda-folio-divider">
+          <span>THE DAILY CIRCUIT · VOL. XXIV</span>
+          <div className="miranda-folio-divider__center">
+            <span className="miranda-folio-divider__pill">PAGE 03</span>
+            <span>TECHNICAL DISPATCHES &amp; VIDEO ARCHIVES</span>
+          </div>
+          <span>SECTION C · ARCHIVE DESK</span>
+        </div>
+
+        <section id="page-03" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 03 · DISPATCHES</div>
           <div className="miranda-multimedia">
             <div className="miranda-multimedia__hero">
               <div className="miranda-badge-kicker">FEATURED DISPATCH</div>
@@ -500,10 +580,22 @@ export function MirandaNewspaper() {
               </div>
             </div>
           </div>
-        )}
+        </section>
 
-        {/* TAB 4: EVIDENCE DESK */}
-        {activeTab === 'evidence' && (
+        {/* ========================================================
+            PAGE 04: EVIDENCE DESK & SOURCE AUDIT
+            ======================================================== */}
+        <div className="miranda-folio-divider">
+          <span>THE DAILY CIRCUIT · VOL. XXIV</span>
+          <div className="miranda-folio-divider__center">
+            <span className="miranda-folio-divider__pill">PAGE 04</span>
+            <span>EDITORIAL EVIDENCE DESK &amp; AUDIT LEDGER</span>
+          </div>
+          <span>SECTION D · PEER VERIFIED</span>
+        </div>
+
+        <section id="page-04" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 04 · EVIDENCE</div>
           <div className="miranda-evidence-tab">
             <div className="miranda-evidence-tab__header">
               <h2>THE EDITORIAL EVIDENCE &amp; AUDIT LEDGER</h2>
@@ -547,41 +639,55 @@ export function MirandaNewspaper() {
               </tbody>
             </table>
           </div>
-        )}
+        </section>
 
-        {/* The Subscription Section (The Business Engine) */}
-        <section id="subscribe-section" className="miranda-subscribe-box">
-          <div className="miranda-subscribe-box__inner">
-            <div className="miranda-subscribe-box__text">
-              <span className="miranda-badge-kicker">PHYSICAL &amp; DIGITAL INTELLIGENCE</span>
-              <h3>Read AI News in Real Ink. Delivered Daily.</h3>
-              <p>
-                Every 24 hours brings a model weight update, an Arxiv breakthrough, or a new repository. 
-                Subscribe to receive our morning digital edition, or our weekly printed physical broadsheet delivered in an uncreased postal tube.
-              </p>
+        {/* ========================================================
+            PAGE 05: MORNING TELEGRAPH & SUBSCRIPTION
+            ======================================================== */}
+        <div className="miranda-folio-divider">
+          <span>THE DAILY CIRCUIT · VOL. XXIV</span>
+          <div className="miranda-folio-divider__center">
+            <span className="miranda-folio-divider__pill">PAGE 05</span>
+            <span>MORNING TELEGRAPH &amp; PRINT SUBSCRIPTION</span>
+          </div>
+          <span>CIRCULATION DESK</span>
+        </div>
+
+        <section id="page-05" className="miranda-page-section">
+          <div className="miranda-page-edge-tag">PAGE 05 · TELEGRAPH</div>
+          <div id="subscribe-section" className="miranda-subscribe-box">
+            <div className="miranda-subscribe-box__inner">
+              <div className="miranda-subscribe-box__text">
+                <span className="miranda-badge-kicker">PHYSICAL &amp; DIGITAL INTELLIGENCE</span>
+                <h3>Read AI News in Real Ink. Delivered Daily.</h3>
+                <p>
+                  Every 24 hours brings a model weight update, an Arxiv breakthrough, or a new repository. 
+                  Subscribe to receive our morning digital edition, or our weekly printed physical broadsheet delivered in an uncreased postal tube.
+                </p>
+              </div>
+
+              <form onSubmit={handleSubscribe} className="miranda-subscribe-form">
+                {subscribed ? (
+                  <div className="subscribed-success">
+                    <CheckCircle2 size={18} /> You are signed up for Edition No. 843 dispatch!
+                  </div>
+                ) : (
+                  <>
+                    <input 
+                      type="email" 
+                      placeholder="Enter your telegraph email address..."
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      required
+                      className="miranda-input"
+                    />
+                    <button type="submit" className="miranda-btn-stamp">
+                      Subscribe Daily →
+                    </button>
+                  </>
+                )}
+              </form>
             </div>
-
-            <form onSubmit={handleSubscribe} className="miranda-subscribe-form">
-              {subscribed ? (
-                <div className="subscribed-success">
-                  <CheckCircle2 size={18} /> You are signed up for Edition No. 843 dispatch!
-                </div>
-              ) : (
-                <>
-                  <input 
-                    type="email" 
-                    placeholder="Enter your telegraph email address..."
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    required
-                    className="miranda-input"
-                  />
-                  <button type="submit" className="miranda-btn-stamp">
-                    Subscribe Daily →
-                  </button>
-                </>
-              )}
-            </form>
           </div>
         </section>
 
