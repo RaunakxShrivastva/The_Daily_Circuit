@@ -61,8 +61,8 @@ export default function App() {
       {/* Apple Liquid Glass Floating Capsule Navbar (Refracts the garden colors through blur) */}
       <LiquidGlassNavbar viewMode={viewMode} onViewChange={setViewMode} />
 
-      {/* Main Experience View */}
-      <div className="relative z-10 pt-10 sm:pt-12">
+      {/* Main Experience View (Full bleed, no top padding gap) */}
+      <div className="relative z-10">
         {viewMode === "3d" ? <FiniteBroadsheet /> : <MirandaNewspaper />}
       </div>
     </div>

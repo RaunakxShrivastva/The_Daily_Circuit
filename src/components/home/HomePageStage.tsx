@@ -143,14 +143,15 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
           </div>
         </div>
 
-        {/* Card 3: Custom Canvas Slot (For User's Future Widgets) */}
+        {/* Card 3: Custom Canvas Slot (Clean, consistent Liquid Glass card) */}
         <div 
-          className="rounded-3xl p-6 border-2 border-dashed border-white/35 hover:border-amber-400/80 transition-all duration-300 flex flex-col items-center justify-center text-center group cursor-pointer min-h-[220px]"
+          className="rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl flex flex-col items-center justify-center text-center group cursor-pointer min-h-[220px]"
           style={{
-            background: "rgba(18, 16, 13, 0.45)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.4)",
+            background: "rgba(18, 16, 13, 0.65)",
+            backdropFilter: "blur(24px) saturate(190%)",
+            WebkitBackdropFilter: "blur(24px) saturate(190%)",
+            border: "1px solid rgba(255, 255, 255, 0.25)",
+            boxShadow: "0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.45)",
           }}
         >
           <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-amber-500/20 flex items-center justify-center mb-3 transition-colors border border-white/20 group-hover:border-amber-400/50">
