@@ -194,6 +194,9 @@ export function MirandaNewspaper() {
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('page-01');
   const [showPageRail, setShowPageRail] = useState(false);
+  const [paperBlur, setPaperBlur] = useState(14);
+  const [paperScale, setPaperScale] = useState(0.96);
+  const [paperOpacity, setPaperOpacity] = useState(0.7);
 
   const [pipelineEdition, setPipelineEdition] = useState<any>(null);
 
@@ -213,8 +216,16 @@ export function MirandaNewspaper() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowPageRail(window.scrollY > 350);
-      const scrollPos = window.scrollY + 200;
+      const scrollY = window.scrollY;
+      setShowPageRail(scrollY > 350);
+
+      // Smooth optical focus resolve as user scrolls from Home Space into Newspaper
+      const progress = Math.min(1, Math.max(0, (scrollY - 80) / 460));
+      setPaperBlur((1 - progress) * 16);
+      setPaperScale(0.96 + progress * 0.04);
+      setPaperOpacity(0.65 + progress * 0.35);
+
+      const scrollPos = scrollY + 200;
       for (let i = PAGE_SECTIONS.length - 1; i >= 0; i--) {
         const el = document.getElementById(PAGE_SECTIONS[i].id);
         if (el && el.offsetTop <= scrollPos) {
@@ -431,8 +442,15 @@ export function MirandaNewspaper() {
       {/* Docked Stageshow Mobile Companion Audio Satellite (Collapsible on the right margin) */}
       <MobileSatelliteStage />
 
-      {/* Main Printed Broadsheet Container */}
-      <main className="miranda-sheet">
+      {/* Main Printed Broadsheet Container with Optical Blur Resolve */}
+      <main 
+        className="miranda-sheet transition-all duration-150 will-change-transform"
+        style={{
+          filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
+          transform: `scale(${paperScale.toFixed(3)})`,
+          opacity: paperOpacity,
+        }}
+      >
         {/* Glowing Copper PCB Reading Spine on the left paper edge */}
         <div 
           className="hidden xl:block absolute left-0 top-0 bottom-0 w-[3px] pointer-events-none rounded-l-sm"
