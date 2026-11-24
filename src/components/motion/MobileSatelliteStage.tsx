@@ -1,18 +1,55 @@
 import { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Sparkles, Radio, X, ChevronRight, Mic } from 'lucide-react';
-
-const DIGEST_SCRIPT = 
-  "Good morning. This is The Daily Circuit sixty-second audio briefing for today. " +
-  "Top headlines: Beam Mixture of Experts reaches 501 billion sparse parameters. " +
-  "AMD server processors demonstrate a twelve-times compute acceleration over the past decade. " +
-  "In silicon news, TSMC A16 introduces backside power delivery. " +
-  "Stay tuned for the next continuous broadsheet press at 06:00 IST.";
+import { Volume2, VolumeX, Sparkles, Radio, X, ChevronRight, Mic, RotateCcw } from 'lucide-react';
 
 export function MobileSatelliteStage() {
   const [isOpen, setIsOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(44);
   const [waveHeights, setWaveHeights] = useState([8, 14, 22, 10, 18, 26, 12, 20]);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize native HTML5 Audio element
+  useEffect(() => {
+    const audio = new Audio('/audio/daily_digest.mp3');
+    audio.preload = 'auto';
+
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+    const onTimeUpdate = () => {
+      setCurrentTime(Math.floor(audio.currentTime));
+      if (audio.duration && !isNaN(audio.duration)) {
+        setDuration(Math.floor(audio.duration));
+      }
+    };
+    const onLoadedMetadata = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        setDuration(Math.floor(audio.duration));
+      }
+    };
+
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+
+    audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.src = '';
+    };
+  }, []);
 
   // Waveform animation loop during real audio playback
   useEffect(() => {
@@ -31,57 +68,31 @@ export function MobileSatelliteStage() {
         Math.floor(Math.random() * 18) + 6,
         Math.floor(Math.random() * 26) + 8,
       ]);
-    }, 120);
+    }, 110);
     return () => clearInterval(interval);
   }, [isPlaying]);
 
-  // Clean up speech on unmount
-  useEffect(() => {
-    return () => {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
-
-  // Web Speech API: Real audio voice synthesis
-  const toggleSpeech = () => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      alert("Your browser does not support audio synthesis.");
-      return;
-    }
-
+  const togglePlay = () => {
+    if (!audioRef.current) return;
     if (isPlaying) {
-      window.speechSynthesis.cancel();
-      setIsPlaying(false);
-      return;
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch((err) => {
+        console.error("Playback failed:", err);
+      });
     }
+  };
 
-    window.speechSynthesis.cancel();
+  const restartAudio = () => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = 0;
+    audioRef.current.play().catch(console.error);
+  };
 
-    const utterance = new SpeechSynthesisUtterance(DIGEST_SCRIPT);
-    utteranceRef.current = utterance;
-    utterance.rate = 1.02;
-    utterance.pitch = 1.0;
-
-    // Pick a natural English voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const naturalVoice = voices.find(
-      (v) =>
-        v.lang.startsWith('en') &&
-        (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel') || v.name.includes('English'))
-    ) || voices.find((v) => v.lang.startsWith('en'));
-
-    if (naturalVoice) {
-      utterance.voice = naturalVoice;
-    }
-
-    utterance.onstart = () => setIsPlaying(true);
-    utterance.onend = () => setIsPlaying(false);
-    utterance.onerror = () => setIsPlaying(false);
-
-    window.speechSynthesis.speak(utterance);
-    setIsPlaying(true);
+  const formatSec = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   return (
@@ -108,7 +119,9 @@ export function MobileSatelliteStage() {
           <div className="hidden sm:flex flex-col text-left border-l border-white/10 pl-2.5">
             <div className="flex items-center gap-1.5">
               <span className={`w-1.5 h-1.5 rounded-full ${isPlaying ? 'bg-emerald-400 animate-pulse' : 'bg-amber-500'}`} />
-              <span className="text-[9px] font-bold text-neutral-200">60s Audio Brief</span>
+              <span className="text-[9px] font-bold text-neutral-200">
+                {isPlaying ? `Playing (${formatSec(currentTime)})` : '60s Audio Brief'}
+              </span>
             </div>
             <span className="text-[8px] text-amber-400/90 font-serif italic">
               {isPlaying ? 'Broadcasting live voice...' : '06:00 IST Edition · Listen'}
@@ -127,7 +140,7 @@ export function MobileSatelliteStage() {
             <div className="absolute inset-0 rounded-[34px] border border-white/10 pointer-events-none" />
 
             {/* Screen Frame */}
-            <div className="bg-[#090807] rounded-[28px] p-4 flex flex-col justify-between min-h-[390px] border border-white/5 relative overflow-hidden">
+            <div className="bg-[#090807] rounded-[28px] p-4 flex flex-col justify-between min-h-[400px] border border-white/5 relative overflow-hidden">
               {/* Dynamic Island Pill + Close Button */}
               <div className="flex items-center justify-between">
                 <div className="w-[124px] h-[26px] bg-black border border-white/15 rounded-full px-2.5 flex items-center justify-between shadow-lg mx-auto">
@@ -168,7 +181,7 @@ export function MobileSatelliteStage() {
                       ? 'text-emerald-300 bg-emerald-950/90 border-emerald-600 animate-pulse' 
                       : 'text-amber-400 bg-amber-950/60 border-amber-800'
                   }`}>
-                    {isPlaying ? 'SPEAKING NOW' : 'VOICE SYNTH'}
+                    {isPlaying ? 'PLAYING AUDIO' : 'HIGH FIDELITY'}
                   </span>
                 </div>
 
@@ -176,7 +189,7 @@ export function MobileSatelliteStage() {
                   "Beam MoE reaches 501B sparse weights; AMD server chips show 12x decade speedup."
                 </p>
 
-                {/* Animated Audio Waveform (Reacts live to speech) */}
+                {/* Animated Audio Waveform (Reacts live to audio playing) */}
                 <div className="flex items-center justify-center gap-1.5 h-8 pt-1">
                   {waveHeights.map((h, i) => (
                     <span
@@ -191,27 +204,51 @@ export function MobileSatelliteStage() {
                   ))}
                 </div>
 
-                {/* Real Audio Play / Pause Button */}
-                <button
-                  onClick={toggleSpeech}
-                  className={`w-full py-2 rounded-lg flex items-center justify-center gap-2 font-bold text-[9.5px] transition-all border ${
-                    isPlaying
-                      ? 'bg-red-950/60 hover:bg-red-900/60 border-red-700/60 text-red-200'
-                      : 'bg-amber-600/90 hover:bg-amber-500 border-amber-400 text-neutral-950 shadow-md'
-                  }`}
-                >
-                  {isPlaying ? (
-                    <>
-                      <VolumeX size={12} className="text-red-300" />
-                      <span>Pause Audio Broadcast</span>
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 size={12} className="text-neutral-950" />
-                      <span>Listen to 60s Broadcast</span>
-                    </>
-                  )}
-                </button>
+                {/* Audio Progress Bar */}
+                <div className="space-y-1">
+                  <div className="w-full bg-neutral-800 h-1 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-amber-400 h-full transition-all duration-300"
+                      style={{ width: `${Math.min(100, (currentTime / (duration || 44)) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[8px] text-neutral-400">
+                    <span>{formatSec(currentTime)}</span>
+                    <span>{formatSec(duration)}</span>
+                  </div>
+                </div>
+
+                {/* Real Audio Play / Pause / Replay Buttons */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={togglePlay}
+                    className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-bold text-[9.5px] transition-all border ${
+                      isPlaying
+                        ? 'bg-red-950/60 hover:bg-red-900/60 border-red-700/60 text-red-200'
+                        : 'bg-amber-500 hover:bg-amber-400 border-amber-300 text-neutral-950 shadow-md'
+                    }`}
+                  >
+                    {isPlaying ? (
+                      <>
+                        <VolumeX size={12} className="text-red-300" />
+                        <span>Pause Broadcast</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 size={12} className="text-neutral-950" />
+                        <span>Listen to 60s Broadcast</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={restartAudio}
+                    className="p-2 bg-[#201d17] hover:bg-[#2c2820] border border-[#3b352b] rounded-lg text-neutral-300 hover:text-white transition-colors"
+                    title="Restart from beginning"
+                  >
+                    <RotateCcw size={12} />
+                  </button>
+                </div>
               </div>
 
               {/* Bottom Lockscreen Notification Preview */}
