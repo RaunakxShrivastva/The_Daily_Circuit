@@ -7,7 +7,16 @@ export default function App() {
   const [viewMode, setViewMode] = useState<"3d" | "miranda">("3d");
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+    <div
+      style={{
+        position: "relative",
+        width: "100vw",
+        height: viewMode === "miranda" ? "auto" : "100vh",
+        minHeight: "100vh",
+        overflowX: "hidden",
+        overflowY: viewMode === "miranda" ? "auto" : "hidden",
+      }}
+    >
       {/* Top Centered Floating View Switcher Pill */}
       <div 
         style={{
