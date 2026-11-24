@@ -32,15 +32,33 @@ export default function App() {
       {/* Cinematic Linotype Stamp Awakening on Initial Landing */}
       <CinematicIntroOverlay />
 
+      {/* Impressionist Botanical Oil Painting Background */}
+      <div 
+        className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/images/main_bg.jpg')",
+          backgroundAttachment: "fixed",
+          opacity: 0.88,
+        }}
+      />
+
+      {/* Soft Vignette Overlay for Depth & High-Contrast Reading */}
+      <div 
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(circle at 50% 25%, rgba(13, 11, 9, 0.2) 0%, rgba(13, 11, 9, 0.55) 60%, rgba(13, 11, 9, 0.85) 100%)",
+        }}
+      />
+
       {/* Interactive Ambient Desk Lamp (Follows mouse behind paper with warm gold glow) */}
       <div 
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
         style={{
-          background: `radial-gradient(750px circle at ${mousePos.x}px ${mousePos.y}px, rgba(235, 175, 95, 0.055), transparent 75%)`,
+          background: `radial-gradient(750px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255, 230, 180, 0.08), transparent 75%)`,
         }}
       />
 
-      {/* Apple Liquid Glass Floating Capsule Navbar */}
+      {/* Apple Liquid Glass Floating Capsule Navbar (Refracts the garden colors through blur) */}
       <LiquidGlassNavbar viewMode={viewMode} onViewChange={setViewMode} />
 
       {/* Main Experience View */}
