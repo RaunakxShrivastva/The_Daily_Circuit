@@ -41,6 +41,7 @@ import { GhostTerminalStage } from './motion/GhostTerminalStage';
 import { PromptDuelStage } from './motion/PromptDuelStage';
 import { MobileSatelliteStage } from './motion/MobileSatelliteStage';
 import { SiliconExplorerStage } from './motion/SiliconExplorerStage';
+import { TelegraphTicker } from './motion/TelegraphTicker';
 
 const PAGE_SECTIONS = [
   { id: 'page-01', num: '01', roman: 'I', label: 'Front Page & Wire', short: 'Front Wire', edge: 'PAGE 01 · WIRE' },
@@ -489,6 +490,9 @@ export function MirandaNewspaper() {
             <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
         </div>
+
+        {/* Live Mechanical Telegraph Ticker Tape Ribbon */}
+        <TelegraphTicker />
 
         {/* Section Navigation Bar (Smooth Page Jump + Category Filter) */}
         <nav className="miranda-nav-bar">
