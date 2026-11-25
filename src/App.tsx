@@ -4,6 +4,7 @@ import { MirandaNewspaper } from "./components/MirandaNewspaper";
 import { LiquidGlassNavbar } from "./components/navigation/LiquidGlassNavbar";
 import { CinematicIntroOverlay } from "./components/motion/CinematicIntroOverlay";
 import { CursorAssemblyEngine } from "./components/motion/CursorAssemblyEngine";
+import { InkyMascot } from "./components/InkyMascot";
 
 export default function App() {
   const [viewMode, setViewMode] = useState<"3d" | "miranda">("miranda");
@@ -73,6 +74,9 @@ export default function App() {
         onViewChange={setViewMode} 
         startExpandedTrigger={introDone}
       />
+
+      {/* Autonomous Editorial Inky Mascot with Physics & Perch */}
+      <InkyMascot defaultTheme="obsidian" />
 
       {/* Main Experience View (Full bleed, no top padding gap) */}
       <div className="relative z-10">

@@ -113,14 +113,18 @@ export function ScrollCircuitPath() {
       ].join(" ");
 
       if (railPathRef.current) railPathRef.current.setAttribute("d", d);
-      if (echoPathRef.current) echoPathRef.current.setAttribute("d", d);
+      if (echoPathRef.current) {
+        echoPathRef.current.setAttribute("d", d);
+        echoPathRef.current.style.strokeDasharray = `${totalPathLength}`;
+        echoPathRef.current.style.strokeDashoffset = `${totalPathLength}`;
+        echoPathRef.current.style.opacity = "0";
+      }
       if (primaryPathRef.current) {
         primaryPathRef.current.setAttribute("d", d);
         totalPathLength = primaryPathRef.current.getTotalLength() || 1;
         primaryPathRef.current.style.strokeDasharray = `${totalPathLength}`;
-      }
-      if (echoPathRef.current) {
-        echoPathRef.current.style.strokeDasharray = `${totalPathLength}`;
+        primaryPathRef.current.style.strokeDashoffset = `${totalPathLength}`;
+        primaryPathRef.current.style.opacity = "0";
       }
 
       // Build 5 Waypoint Nodes
@@ -297,9 +301,11 @@ export function ScrollCircuitPath() {
 
       if (primaryPathRef.current) {
         primaryPathRef.current.style.strokeDashoffset = `${totalLen - primaryDrawLen}`;
+        primaryPathRef.current.style.opacity = scrollProgress > 0.001 ? "1" : "0";
       }
       if (echoPathRef.current) {
         echoPathRef.current.style.strokeDashoffset = `${totalLen - echoDrawLen}`;
+        echoPathRef.current.style.opacity = scrollProgress > 0.001 ? "1" : "0";
       }
       if (railPathRef.current) {
         railPathRef.current.style.opacity = scrollProgress > 0.002 ? "1" : "0";
@@ -320,12 +326,16 @@ export function ScrollCircuitPath() {
       waypointRatios.forEach((ratio, idx) => {
         let isReached = false;
         if (idx === 0) {
-          isReached = scrollProgress > 0.005;
+          isReached = scrollProgress > 0.01;
         } else {
           isReached = scrollProgress >= ratio - 0.02;
         }
         if (waypointNodes[idx]) {
           waypointNodes[idx].classList.toggle("ignited", isReached);
+          if (idx === 0) {
+            waypointNodes[idx].style.opacity = scrollProgress > 0.002 ? "1" : "0";
+            waypointNodes[idx].style.transition = "opacity 0.35s ease";
+          }
         }
       });
 

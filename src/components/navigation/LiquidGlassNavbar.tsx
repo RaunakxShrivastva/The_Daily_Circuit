@@ -316,12 +316,21 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
       </svg>
 
       {/* Dynamic Notch Top Navbar */}
-      <nav id="liquid-notch" ref={notchRef} data-state={activeState} aria-label="Dynamic Notch Navigation">
+      <nav 
+        id="liquid-notch" 
+        ref={notchRef} 
+        data-state={activeState} 
+        aria-label="Dynamic Notch Navigation"
+        data-perch="true"
+        data-mascot-note="MacBook Dynamic Notch. Liquid Glass optics with live 60fps spring geometry."
+      >
         <div
           className={`notch-shell ${activeState === "collapsed" ? "cursor-pointer" : ""}`}
           ref={shellRef}
           onClick={handleShellClick}
           onMouseMove={handleMouseMove}
+          data-perch="true"
+          data-mascot-note="MacBook Dynamic Notch. Liquid Glass optics with live 60fps spring geometry."
         >
           {/* Optical Liquid Glass Backdrop */}
           <div className="notch-glass-bg" />

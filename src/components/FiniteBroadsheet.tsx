@@ -305,6 +305,7 @@ export function FiniteBroadsheet() {
   // Stamp Complete Ritual
   const handleStamp = () => {
     setIsStamped(true);
+    window.dispatchEvent(new CustomEvent("daily-circuit:stamp"));
     playFlipSound();
     confetti({
       particleCount: 85,
@@ -350,6 +351,8 @@ export function FiniteBroadsheet() {
         <div
           ref={rootRef}
           id="broadsheetRoot"
+          data-perch="true"
+          data-mascot-note="Finite Broadsheet Spread. 3D page curl engine."
           className="relative transition-transform duration-200 ease-out"
           style={{ width: 1020, height: 670, perspective: 2500 }}
         >

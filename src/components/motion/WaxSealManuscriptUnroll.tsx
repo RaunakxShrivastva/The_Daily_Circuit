@@ -28,6 +28,7 @@ export function WaxSealManuscriptUnroll({
   useEffect(() => {
     if (crackProgress > 0.4 && !hasSparked) {
       setHasSparked(true);
+      window.dispatchEvent(new CustomEvent("daily-circuit:stamp"));
       try {
         confetti({
           particleCount: 40,
@@ -47,6 +48,7 @@ export function WaxSealManuscriptUnroll({
 
   const handleSealClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    window.dispatchEvent(new CustomEvent("daily-circuit:stamp"));
     try {
       confetti({
         particleCount: 48,

@@ -415,6 +415,7 @@ export function MirandaNewspaper() {
     e.preventDefault();
     if (!emailInput) return;
     setSubscribed(true);
+    window.dispatchEvent(new CustomEvent("daily-circuit:stamp"));
     confetti({
       particleCount: 70,
       spread: 60,
@@ -504,6 +505,8 @@ export function MirandaNewspaper() {
         {/* Main Printed Broadsheet Container with 3D Perspective Unroll & Optical Blur Resolve */}
         <main 
           className="miranda-sheet transition-all duration-75 will-change-transform"
+          data-perch="true"
+          data-mascot-note="Edition #143 Broadsheet. Continuous 8-page infinite signal feed."
           style={{
             clipPath: unrollProgress < 0.98 ? `inset(0 0 calc(100% - ${revealedHeight + 24}px) 0)` : undefined,
             filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
@@ -596,7 +599,11 @@ export function MirandaNewspaper() {
           <div className="miranda-page-edge-tag">PAGE 01 · FRONT WIRE</div>
           <div className="miranda-front-grid">
             {/* Left Big Lead Story */}
-            <article className="miranda-lead">
+            <article 
+              className="miranda-lead"
+              data-perch="true"
+              data-mascot-note="Lead Wire: Beam MoE sparse 501B architecture. 96.8% noise cut."
+            >
               <div className="miranda-lead__badge-row">
                 <span className="miranda-badge-kicker">{leadStory?.kicker || 'BREAKING WIRE'}</span>
                 <span className="miranda-badge-time"><Clock size={12} /> {leadStory?.dateline}</span>
@@ -662,7 +669,11 @@ export function MirandaNewspaper() {
             </article>
 
             {/* Right Wire: The Rapid AI Wire */}
-            <aside className="miranda-wire">
+            <aside 
+              className="miranda-wire"
+              data-perch="true"
+              data-mascot-note="Live AI Wire: 24h real-time curated signal feed."
+            >
               <div className="miranda-wire__header">
                 <TrendingUp size={16} />
                 <h3>THE LIVE AI WIRE</h3>
@@ -915,7 +926,11 @@ export function MirandaNewspaper() {
           <IncidentReplayStage />
 
           {/* Lead Incident Teardown */}
-          <article className="miranda-incident-lead">
+          <article 
+            className="miranda-incident-lead"
+            data-perch="true"
+            data-mascot-note="Incident Audit: Production Sev-1 root cause teardown."
+          >
             <div className="miranda-incident-badge-row">
               <span className="miranda-badge-incident">PRODUCTION SEV-1</span>
               <span className="miranda-badge-time"><Clock size={12} /> Target: {LEAD_INCIDENT.system}</span>
