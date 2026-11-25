@@ -8,7 +8,7 @@ interface LiquidGlassNavbarProps {
 
 export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarProps) {
   const [activeState, setActiveState] = useState<"collapsed" | "idle" | "search" | "audio">("collapsed");
-  const [activeSection, setActiveSection] = useState("front");
+  const [activeSection, setActiveSection] = useState("home");
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentTime, setCurrentTime] = useState("");
@@ -19,6 +19,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
   const rimPathRef = useRef<SVGPathElement>(null);
   const progressPathRef = useRef<SVGPathElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // MacBook Notch Geometry Constants
   const EAR = 22;
@@ -26,9 +27,9 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
 
   const STATES: Record<string, { w: number; h: number }> = {
     collapsed: { w: 180, h: 34 },
-    idle: { w: 520, h: 46 },
-    search: { w: 540, h: 124 },
-    audio: { w: 480, h: 118 },
+    idle: { w: 410, h: 46 },
+    search: { w: 500, h: 124 },
+    audio: { w: 460, h: 118 },
   };
 
   // Start in collapsed state initially
@@ -36,7 +37,26 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
   const targetRef = useRef({ ...STATES.collapsed });
   const velRef = useRef({ w: 0, h: 0 });
 
-  // 1. Live Time Formatting (e.g. "6:14" or "13:10")
+  // 1. Initialize Real Native HTML5 Audio
+  useEffect(() => {
+    const audio = new Audio("/audio/daily_digest.mp3");
+    audio.preload = "auto";
+    audio.onplay = () => setIsPlayingAudio(true);
+    audio.onpause = () => setIsPlayingAudio(false);
+    audio.onended = () => setIsPlayingAudio(false);
+    audio.onerror = (e) => {
+      console.warn("Audio load error:", e);
+      setIsPlayingAudio(false);
+    };
+    audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+    };
+  }, []);
+
+  // 2. Live Time Formatting (e.g. "6:14" or "13:10")
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -49,7 +69,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Optical Refraction Normal Map for Liquid Glass
+  // 3. Optical Refraction Normal Map for Liquid Glass
   useEffect(() => {
     const mapCanvas = document.createElement("canvas");
     mapCanvas.width = 256;
@@ -78,7 +98,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     }
   }, []);
 
-  // 3. Build MacBook Notch SVG Path (Concave ears at top + rounded bottom)
+  // 4. Build MacBook Notch SVG Path (Concave ears at top + rounded bottom)
   const buildNotchPath = useCallback(
     (bodyW: number, bodyH: number, close: boolean) => {
       const totalW = bodyW + EAR * 2;
@@ -98,7 +118,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     [EAR, RADIUS]
   );
 
-  // 4. Spring Physics 60 FPS Animation Loop
+  // 5. Spring Physics 60 FPS Animation Loop
   useEffect(() => {
     let animId: number;
 
@@ -150,7 +170,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     return () => cancelAnimationFrame(animId);
   }, [buildNotchPath, EAR, RADIUS]);
 
-  // 5. Scroll Tracking: At top -> Collapsed Notch; When scrolled -> Expands into full Notch Navbar
+  // 6. Scroll Tracking: At top -> Collapsed Notch; When scrolled -> Expands into Notch Navbar
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -239,24 +259,26 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     }
   };
 
-  // 60-Second Audio Digest Playback with Live Equalizer
-  const togglePlayAudio = () => {
+  // 60-Second Real Audio Digest Play / Pause
+  const togglePlayAudio = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (isPlayingAudio) {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      audio.pause();
       setIsPlayingAudio(false);
     } else {
-      setIsPlayingAudio(true);
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(
-          "Welcome to The Daily Circuit. Sixty-second daily brief, Edition 143. Today's headline: Beam MoE sparse architecture achieves breakthrough inference speed with 96.8 percent noise reduction. All repositories and model weights verified."
-        );
-        utterance.rate = 1.05;
-        utterance.pitch = 0.98;
-        utterance.onend = () => setIsPlayingAudio(false);
-        utterance.onerror = () => setIsPlayingAudio(false);
-        window.speechSynthesis.speak(utterance);
-      }
+      audio.currentTime = 0;
+      audio
+        .play()
+        .then(() => {
+          setIsPlayingAudio(true);
+        })
+        .catch((err) => {
+          console.warn("Audio playback error:", err);
+          setIsPlayingAudio(false);
+        });
     }
   };
 
@@ -336,7 +358,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
             </div>
           ) : (
             /* ======================================================== */
-            /* STATE B: EXPANDED NOTCH (Full Bar, Search or Audio)      */
+            /* STATE B: EXPANDED NOTCH (Home, 3D Mode, Search, Audio)   */
             /* ======================================================== */
             <div className="notch-content">
               <div className="notch-top-row">
@@ -357,31 +379,11 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      scrollToSection("page-01", "front");
+                      scrollToSection("home-stage", "home");
                     }}
-                    className={`notch-link cursor-pointer ${activeSection === "front" ? "active" : ""}`}
+                    className={`notch-link cursor-pointer ${activeSection === "home" ? "active" : ""}`}
                   >
-                    Front
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      scrollToSection("page-02", "models");
-                    }}
-                    className={`notch-link cursor-pointer ${activeSection === "models" ? "active" : ""}`}
-                  >
-                    Models
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      scrollToSection("page-04", "repos");
-                    }}
-                    className={`notch-link cursor-pointer ${activeSection === "repos" ? "active" : ""}`}
-                  >
-                    Repos
+                    Home
                   </button>
                   <button
                     type="button"
@@ -441,7 +443,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
                 </div>
               </div>
 
-              {/* Expanded Audio State Panel */}
+              {/* Expanded Audio State Panel with Real Audio Playback */}
               <div className="notch-panel" data-panel="audio">
                 <div className="notch-audio-row">
                   <button type="button" id="notch-play-btn" onClick={togglePlayAudio} className="notch-play">
@@ -449,7 +451,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
                   </button>
                   <div className="notch-audio-meta">
                     <strong>60-Second Daily Brief</strong>
-                    <span>Issue #143 · AI &amp; Systems</span>
+                    <span>Issue #143 · AI &amp; Systems (Spoken Edition)</span>
                   </div>
                   <div className={`notch-eq ${isPlayingAudio ? "playing" : ""}`} id="notch-eq">
                     <i />
@@ -563,7 +565,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 16px;
+          gap: 14px;
         }
 
         .notch-brand {
@@ -592,7 +594,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
         }
 
         .notch-link {
-          padding: 5px 11px;
+          padding: 5px 12px;
           border-radius: 999px;
           font-size: 12.5px;
           font-weight: 500;
