@@ -1,136 +1,466 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  decay: number;
+  size: number;
+  isRed: boolean;
+}
 
 export function ScrollCircuitPath() {
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const pathRef = useRef<SVGPathElement>(null);
-  const sparkRef = useRef<SVGCircleElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const railPathRef = useRef<SVGPathElement>(null);
+  const echoPathRef = useRef<SVGPathElement>(null);
+  const primaryPathRef = useRef<SVGPathElement>(null);
+  const waypointsGroupRef = useRef<SVGGElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cursorGlowRef = useRef<HTMLDivElement>(null);
+
+  const hudProgressRef = useRef<HTMLSpanElement>(null);
+  const hudVelocityRef = useRef<HTMLSpanElement>(null);
+  const hudBarsRef = useRef<(HTMLSpanElement | null)[]>([]);
 
   useEffect(() => {
-    let animationFrameId: number;
-    let targetProgress = 0;
-    let currentProgress = 0;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    const handleScroll = () => {
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (scrollHeight > 0) {
-        targetProgress = Math.min(1, Math.max(0, window.scrollY / scrollHeight));
+    let animFrameId: number;
+    const DAMPING = 0.075;
+    const ECHO_DAMPING = 0.045;
+
+    let targetScroll = window.scrollY;
+    let currentScroll = window.scrollY;
+    let prevScroll = window.scrollY;
+    let scrollVelocity = 0;
+    let scrollProgress = 0;
+    let echoProgress = 0;
+    let maxScroll = 1;
+    let totalPathLength = 1;
+
+    let waypointRatios = [0.01, 0.26, 0.52, 0.77, 0.96];
+    let waypointNodes: SVGGElement[] = [];
+    const particles: Particle[] = [];
+
+    // 1. Build Responsive Multi-Curve Bézier Path & Waypoints
+    const buildPath = () => {
+      const w = window.innerWidth;
+      const h = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+        window.innerHeight * 2
+      );
+
+      maxScroll = Math.max(1, h - window.innerHeight);
+
+      if (svgRef.current) {
+        svgRef.current.setAttribute("viewBox", `0 0 ${w} ${h}`);
+        svgRef.current.style.width = `${w}px`;
+        svgRef.current.style.height = `${h}px`;
+      }
+
+      // Resize canvas for crisp HiDPI rendering
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Identify major section anchor Y coordinates
+      const secSelectors = ["#home-stage", "#page-01", "#page-03", "#page-05", "#page-08"];
+      const anchorY = secSelectors.map((sel, idx) => {
+        const el = document.querySelector(sel) as HTMLElement | null;
+        if (el) {
+          return el.offsetTop + el.offsetHeight * 0.42;
+        }
+        return (idx / (secSelectors.length - 1)) * h;
+      });
+
+      const cx = w * 0.5;
+      const leftSweep = w < 768 ? w * 0.08 : w * 0.12;
+      const rightSweep = w < 768 ? w * 0.92 : w * 0.88;
+
+      const p0 = { x: cx, y: Math.max(120, anchorY[0] + 100) };
+      const p1 = { x: leftSweep, y: Math.max(anchorY[1], p0.y + 350) };
+      const p2 = { x: rightSweep, y: Math.max(anchorY[2], p1.y + 400) };
+      const p3 = { x: leftSweep + (w * 0.05), y: Math.max(anchorY[3], p2.y + 450) };
+      const p4 = { x: cx, y: Math.min(h - 120, Math.max(anchorY[4], p3.y + 400)) };
+
+      // Organic winding cubic Bézier path
+      const d = [
+        `M ${p0.x} ${p0.y}`,
+        `C ${cx} ${p0.y + 220}, ${leftSweep} ${p1.y - 240}, ${p1.x} ${p1.y}`,
+        `C ${leftSweep} ${p1.y + 260}, ${rightSweep} ${p2.y - 260}, ${p2.x} ${p2.y}`,
+        `C ${rightSweep} ${p2.y + 240}, ${p3.x} ${p3.y - 240}, ${p3.x} ${p3.y}`,
+        `C ${p3.x} ${p3.y + 240}, ${cx} ${p4.y - 220}, ${p4.x} ${p4.y}`,
+      ].join(" ");
+
+      if (railPathRef.current) railPathRef.current.setAttribute("d", d);
+      if (echoPathRef.current) echoPathRef.current.setAttribute("d", d);
+      if (primaryPathRef.current) {
+        primaryPathRef.current.setAttribute("d", d);
+        totalPathLength = primaryPathRef.current.getTotalLength() || 1;
+        primaryPathRef.current.style.strokeDasharray = `${totalPathLength}`;
+      }
+      if (echoPathRef.current) {
+        echoPathRef.current.style.strokeDasharray = `${totalPathLength}`;
+      }
+
+      // Build 5 Waypoint Nodes
+      const pts = [p0, p1, p2, p3, p4];
+      if (waypointsGroupRef.current) {
+        waypointsGroupRef.current.innerHTML = "";
+        waypointNodes = [];
+
+        pts.forEach((pt, idx) => {
+          const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          g.setAttribute("class", "waypoint-node");
+          g.setAttribute("data-index", String(idx));
+
+          const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          ring.setAttribute("cx", String(pt.x));
+          ring.setAttribute("cy", String(pt.y));
+          ring.setAttribute("r", "10");
+          ring.setAttribute("fill", "none");
+          ring.setAttribute("stroke", "#ff3b2f");
+          ring.setAttribute("stroke-width", "1.5");
+          ring.setAttribute("class", "waypoint-ring");
+
+          const outer = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          outer.setAttribute("cx", String(pt.x));
+          outer.setAttribute("cy", String(pt.y));
+          outer.setAttribute("r", "8");
+          outer.setAttribute("fill", "#070708");
+          outer.setAttribute("stroke", "rgba(255,255,255,0.28)");
+          outer.setAttribute("stroke-width", "1.2");
+
+          const core = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          core.setAttribute("cx", String(pt.x));
+          core.setAttribute("cy", String(pt.y));
+          core.setAttribute("r", "3.5");
+          core.setAttribute("fill", "rgba(255,255,255,0.5)");
+          core.setAttribute("class", "waypoint-core");
+
+          g.appendChild(ring);
+          g.appendChild(outer);
+          g.appendChild(core);
+          waypointsGroupRef.current?.appendChild(g);
+          waypointNodes.push(g);
+        });
+      }
+
+      waypointRatios = [0.01, 0.26, 0.52, 0.77, 0.96];
+    };
+
+    // 2. Velocity-Reactive Particle System
+    const spawnSparks = (x: number, y: number, speed: number) => {
+      const count = Math.min(6, Math.floor(speed * 0.22));
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const mag = 0.6 + Math.random() * Math.min(4.2, speed * 0.14);
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * mag,
+          vy: Math.sin(angle) * mag,
+          life: 1,
+          decay: 0.025 + Math.random() * 0.03,
+          size: 1.1 + Math.random() * 2.1,
+          isRed: Math.random() > 0.35,
+        });
       }
     };
 
-    // Buttery smooth lerp render loop for scroll line drawing
-    const updateLoop = () => {
-      currentProgress += (targetProgress - currentProgress) * 0.12;
-      setScrollProgress(currentProgress);
+    const renderCanvasTipAndSparks = (tipX: number, tipY: number, speed: number) => {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-      if (pathRef.current && sparkRef.current) {
-        const totalLen = pathRef.current.getTotalLength();
-        const currentLen = currentProgress * totalLen;
-        const point = pathRef.current.getPointAtLength(currentLen);
-        
-        sparkRef.current.setAttribute("cx", point.x.toString());
-        sparkRef.current.setAttribute("cy", point.y.toString());
+      if (speed > 1.2 && tipY > -40 && tipY < window.innerHeight + 40) {
+        spawnSparks(tipX, tipY, speed);
       }
 
-      animationFrameId = requestAnimationFrame(updateLoop);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.96;
+        p.vy *= 0.96;
+        p.life -= p.decay;
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        ctx.fillStyle = p.isRed
+          ? `rgba(255, 59, 47, ${p.life * 0.9})`
+          : `rgba(255, 255, 255, ${p.life * 0.85})`;
+        ctx.fill();
+      }
+
+      // Draw Luminous Leading Tip Orb & Reticle
+      if (tipY > -60 && tipY < window.innerHeight + 60) {
+        const glowRadius = 18 + Math.min(20, speed * 0.6);
+        const grad = ctx.createRadialGradient(tipX, tipY, 0, tipX, tipY, glowRadius);
+        grad.addColorStop(0, "rgba(255, 255, 255, 1)");
+        grad.addColorStop(0.3, "rgba(255, 59, 47, 0.75)");
+        grad.addColorStop(1, "rgba(255, 59, 47, 0)");
+
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, glowRadius, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+      }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    animationFrameId = requestAnimationFrame(updateLoop);
+    // 3. Main 60 FPS Render Loop
+    const animate = () => {
+      targetScroll = window.scrollY;
+      prevScroll = currentScroll;
+      currentScroll += (targetScroll - currentScroll) * DAMPING;
+
+      if (Math.abs(targetScroll - currentScroll) < 0.05) {
+        currentScroll = targetScroll;
+      }
+
+      scrollVelocity = currentScroll - prevScroll;
+      const absVel = Math.abs(scrollVelocity);
+      scrollProgress = Math.max(0, Math.min(1, currentScroll / maxScroll));
+
+      echoProgress += (scrollProgress - echoProgress) * ECHO_DAMPING;
+
+      const primaryDrawLen = totalPathLength * scrollProgress;
+      const echoDrawLen = totalPathLength * echoProgress;
+
+      if (primaryPathRef.current) {
+        primaryPathRef.current.style.strokeDashoffset = `${totalPathLength - primaryDrawLen}`;
+      }
+      if (echoPathRef.current) {
+        echoPathRef.current.style.strokeDashoffset = `${totalPathLength - echoDrawLen}`;
+      }
+
+      // Convert path coordinates to viewport coordinates
+      if (primaryPathRef.current) {
+        try {
+          const tipPt = primaryPathRef.current.getPointAtLength(primaryDrawLen);
+          const viewportTipY = tipPt.y - currentScroll;
+          renderCanvasTipAndSparks(tipPt.x, viewportTipY, absVel);
+        } catch {
+          // ignore
+        }
+      }
+
+      // Ignite Waypoints
+      waypointRatios.forEach((ratio, idx) => {
+        const isReached = scrollProgress >= ratio - 0.03;
+        if (waypointNodes[idx]) {
+          waypointNodes[idx].classList.toggle("ignited", isReached);
+        }
+      });
+
+      // Update Telemetry HUD
+      if (hudProgressRef.current) {
+        hudProgressRef.current.textContent = `${(scrollProgress * 100).toFixed(1).padStart(4, "0")}%`;
+      }
+      if (hudVelocityRef.current) {
+        hudVelocityRef.current.textContent = `${absVel.toFixed(1)} px/f`;
+      }
+
+      const normSpeed = Math.min(100, Math.max(15, absVel * 4.2));
+      hudBarsRef.current.forEach((bar, i) => {
+        if (bar) {
+          const h = Math.max(14, Math.min(100, normSpeed * (0.45 + (i / 6) * 0.75)));
+          bar.style.height = `${h.toFixed(0)}%`;
+        }
+      });
+
+      animFrameId = requestAnimationFrame(animate);
+    };
+
+    // Ambient Cursor Glow Listener
+    const handleMouseMove = (e: MouseEvent) => {
+      if (cursorGlowRef.current) {
+        cursorGlowRef.current.style.transform = `translate3d(${e.clientX - 170}px, ${e.clientY - 170}px, 0)`;
+      }
+    };
+
+    buildPath();
+    animFrameId = requestAnimationFrame(animate);
+
+    window.addEventListener("resize", buildPath);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+
+    // Periodic path check for dynamically loaded elements
+    const pathCheckInterval = setInterval(buildPath, 3000);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(animFrameId);
+      clearInterval(pathCheckInterval);
+      window.removeEventListener("resize", buildPath);
+      window.removeEventListener("mousemove", handleMouseMove);
     };
   }, []);
 
   return (
-    <aside 
-      className="hidden xl:block fixed left-6 top-0 bottom-0 w-12 z-30 pointer-events-none select-none"
-      aria-hidden="true"
-    >
+    <>
+      <style>{`
+        .waypoint-ring {
+          transform-box: fill-box;
+          transform-origin: center;
+          opacity: 0;
+          transform: scale(0.4);
+          transition: opacity 0.4s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .waypoint-node.ignited .waypoint-ring {
+          opacity: 0.85;
+          transform: scale(2.4);
+          animation: signalPulseRing 2.2s ease-out infinite;
+        }
+        .waypoint-core {
+          transition: fill 0.35s ease, r 0.35s ease;
+        }
+        .waypoint-node.ignited .waypoint-core {
+          fill: #ff3b2f;
+        }
+        @keyframes signalPulseRing {
+          0% { transform: scale(0.8); opacity: 0.85; }
+          100% { transform: scale(2.9); opacity: 0; }
+        }
+      `}</style>
+
+      {/* Desktop Magnetic Cursor Ambient Glow */}
+      <div
+        ref={cursorGlowRef}
+        aria-hidden="true"
+        className="fixed top-0 left-0 w-[340px] h-[340px] rounded-full pointer-events-none z-30 will-change-transform hidden md:block"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(255, 59, 47, 0.08) 0%, rgba(255, 255, 255, 0.015) 40%, transparent 70%)",
+          transform: "translate3d(-500px, -500px, 0)",
+        }}
+      />
+
+      {/* Fixed Full-Viewport HTML5 Canvas for Leading Tip Orb & Velocity Particle Sparks */}
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 w-full h-full pointer-events-none z-30"
+      />
+
+      {/* FULL-PAGE MULTI-STRAND MOVING LINE SVG OVERLAY */}
       <svg
-        className="w-full h-full"
-        viewBox="0 0 48 1000"
+        ref={svgRef}
+        className="absolute top-0 left-0 w-full pointer-events-none z-10 overflow-visible"
         preserveAspectRatio="none"
       >
         <defs>
-          {/* Intense Neon Amber & Copper Glow Filter */}
-          <filter id="circuit-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur1" />
-            <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2" />
+          {/* Primary Luminous Beam Gradient (#ffffff -> #ffd0cc -> #ff3b2f) */}
+          <linearGradient id="beamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="45%" stopColor="#ffd0cc" />
+            <stop offset="100%" stopColor="#ff3b2f" />
+          </linearGradient>
+
+          {/* Soft Luminous Bloom Filter */}
+          <filter id="beamGlow" x="-25%" y="-10%" width="150%" height="120%">
+            <feGaussianBlur stdDeviation="4.5" result="blur" />
             <feMerge>
-              <feMergeNode in="blur2" />
-              <feMergeNode in="blur1" />
+              <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-
-          {/* Copper to Amber Linear Gradient */}
-          <linearGradient id="circuit-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#d97706" stopOpacity="0.3" />
-            <stop offset="30%" stopColor="#f59e0b" stopOpacity="0.9" />
-            <stop offset="70%" stopColor="#ef4444" stopOpacity="1" />
-            <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.9" />
-          </linearGradient>
         </defs>
 
-        {/* Background Trace Guide Track (Faint PCB copper silhouette) */}
+        {/* Strand 3: Background Architectural Rail */}
         <path
-          d="M 24,0 L 24,180 L 12,210 L 12,380 L 36,430 L 36,620 L 16,670 L 16,840 L 28,880 L 28,1000"
+          ref={railPathRef}
           fill="none"
           stroke="rgba(255, 255, 255, 0.08)"
-          strokeWidth="1.5"
-          strokeDasharray="4 4"
+          strokeWidth="1"
+          strokeDasharray="4 8"
         />
 
-        {/* Active Animated Drawn Path (Linked precisely to scroll depth) */}
+        {/* Strand 2: Velocity-Lagged Harmonic Echo */}
         <path
-          ref={pathRef}
-          d="M 24,0 L 24,180 L 12,210 L 12,380 L 36,430 L 36,620 L 16,670 L 16,840 L 28,880 L 28,1000"
+          ref={echoPathRef}
           fill="none"
-          stroke="url(#circuit-gradient)"
-          strokeWidth="3"
+          stroke="#ff3b2f"
+          strokeOpacity="0.45"
+          strokeWidth="1.5"
           strokeLinecap="round"
-          strokeLinejoin="round"
-          pathLength="1"
-          strokeDasharray="1"
-          strokeDashoffset={1 - scrollProgress}
-          filter="url(#circuit-glow)"
-          style={{
-            transition: "stroke-dashoffset 40ms linear",
-          }}
         />
 
-        {/* Traveling High-Voltage Spark Node at Path Head */}
-        <circle
-          ref={sparkRef}
-          cx="24"
-          cy="0"
-          r="4.5"
-          fill="#fff"
-          stroke="#f59e0b"
-          strokeWidth="2"
-          filter="url(#circuit-glow)"
-          style={{
-            opacity: scrollProgress > 0.005 ? 1 : 0,
-            transition: "opacity 200ms ease",
-          }}
+        {/* Strand 1: Primary Luminous Beam */}
+        <path
+          ref={primaryPathRef}
+          fill="none"
+          stroke="url(#beamGrad)"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          filter="url(#beamGlow)"
         />
 
-        {/* Secondary Ambient Halo around Spark */}
-        {scrollProgress > 0.005 && (
-          <circle
-            cx={sparkRef.current?.getAttribute("cx") || "24"}
-            cy={sparkRef.current?.getAttribute("cy") || "0"}
-            r="9"
-            fill="none"
-            stroke="rgba(245, 158, 11, 0.6)"
-            strokeWidth="1"
-            className="animate-ping"
-          />
-        )}
+        {/* 5 Igniting Geometric Waypoint Nodes */}
+        <g ref={waypointsGroupRef} />
       </svg>
-    </aside>
+
+      {/* Floating Fixed Telemetry HUD (Bottom-Right Glassmorphic Pill) */}
+      <aside
+        aria-label="Scroll Physics Telemetry"
+        className="fixed bottom-5 right-5 z-40 flex items-center gap-3.5 px-4 py-2.5 rounded-full backdrop-blur-xl bg-black/75 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.8)] pointer-events-auto select-none"
+      >
+        <div className="flex flex-col">
+          <span className="font-mono text-[9px] uppercase tracking-widest text-zinc-400">Progress</span>
+          <span ref={hudProgressRef} className="font-mono text-xs font-bold text-zinc-100 tabular-nums">
+            00.0%
+          </span>
+        </div>
+
+        <div className="w-px h-6 bg-white/15" />
+
+        <div className="flex flex-col">
+          <span className="font-mono text-[9px] uppercase tracking-widest text-zinc-400">Velocity</span>
+          <span ref={hudVelocityRef} className="font-mono text-xs font-bold text-[#ff3b2f] tabular-nums">
+            0.0 px/f
+          </span>
+        </div>
+
+        {/* Live Velocity Sparkline Bars */}
+        <div className="hidden sm:flex items-end gap-[2px] h-6 w-12 px-1" aria-hidden="true">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <span
+              key={i}
+              ref={(el) => {
+                hudBarsRef.current[i] = el;
+              }}
+              className={`w-1 rounded-full transition-all duration-75 ${i === 5 ? "bg-[#ff3b2f]" : "bg-white/25"}`}
+              style={{ height: "20%" }}
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          title="Smooth Scroll to Top"
+          aria-label="Return to Origin"
+          className="w-7 h-7 rounded-full border border-white/15 hover:border-[#ff3b2f] hover:bg-[#ff3b2f]/15 flex items-center justify-center text-zinc-200 hover:text-white transition group"
+        >
+          <svg className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      </aside>
+    </>
   );
 }
