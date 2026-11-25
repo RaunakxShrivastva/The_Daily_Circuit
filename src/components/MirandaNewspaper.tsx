@@ -223,16 +223,20 @@ export function MirandaNewspaper() {
 
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      setShowPageRail(scrollY > 500);
+      const homeHeight = window.innerHeight || 850;
+      setShowPageRail(scrollY > homeHeight * 0.7);
 
       // Smooth optical focus resolve as user scrolls from Home Space into Newspaper
-      const progress = Math.min(1, Math.max(0, (scrollY - 120) / 700));
+      const progress = Math.min(1, Math.max(0, (scrollY - homeHeight * 0.4) / 700));
       setPaperBlur((1 - progress) * 12);
       setPaperScale(0.97 + progress * 0.03);
       setPaperOpacity(Math.min(1, progress * 1.5));
 
-      // Generous 1300px scroll runway so user feels every millimeter of the seal breaking & unroll
-      targetUnroll = Math.min(1, Math.max(0, (scrollY - 20) / 1280));
+      // Second-Page Scroll Runway: Unroll only begins when user scrolls into the second page
+      // Starts at homeHeight * 0.45 (~400px) and smoothly unrolls over 850px of scroll
+      const scrollStart = homeHeight * 0.45;
+      const scrollDistance = 880;
+      targetUnroll = Math.min(1, Math.max(0, (scrollY - scrollStart) / scrollDistance));
 
       const scrollPos = scrollY + 200;
       for (let i = PAGE_SECTIONS.length - 1; i >= 0; i--) {
@@ -468,8 +472,8 @@ export function MirandaNewspaper() {
       {/* Docked Stageshow Mobile Companion Audio Satellite (Collapsible on the right margin) */}
       <MobileSatelliteStage />
 
-      {/* 3D Physical Manuscript Unroll Wrapper */}
-      <div className="relative max-w-[1260px] mx-auto mt-6">
+      {/* 3D Physical Manuscript Unroll Wrapper on Second Page */}
+      <div className="relative max-w-[1260px] mx-auto mt-16 sm:mt-24">
         {/* The 3D Rolling Cylinder and Wax Seal that moves down as you scroll */}
         <WaxSealManuscriptUnroll 
           scrollProgress={unrollProgress}

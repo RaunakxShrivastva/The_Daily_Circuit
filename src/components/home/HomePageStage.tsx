@@ -23,7 +23,7 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
   return (
     <section 
       id="home-stage"
-      className="relative min-h-[82vh] sm:min-h-[85vh] w-full flex flex-col justify-between px-4 sm:px-8 pt-24 pb-6 font-mono select-none overflow-hidden"
+      className="relative min-h-screen w-full flex flex-col justify-between px-4 sm:px-8 pt-24 pb-12 font-mono select-none overflow-hidden"
       style={{
         backgroundImage: "url('/images/main_bg.jpg')",
         backgroundPosition: "center center",
