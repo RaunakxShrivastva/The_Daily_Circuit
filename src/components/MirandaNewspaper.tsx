@@ -217,19 +217,22 @@ export function MirandaNewspaper() {
   };
 
   useEffect(() => {
+    let animFrameId: number;
+    let targetUnroll = 0;
+    let currentUnroll = 0;
+
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      setShowPageRail(scrollY > 350);
+      setShowPageRail(scrollY > 500);
 
       // Smooth optical focus resolve as user scrolls from Home Space into Newspaper
-      const progress = Math.min(1, Math.max(0, (scrollY - 100) / 600));
+      const progress = Math.min(1, Math.max(0, (scrollY - 120) / 700));
       setPaperBlur((1 - progress) * 12);
       setPaperScale(0.97 + progress * 0.03);
       setPaperOpacity(Math.min(1, progress * 1.5));
 
-      // Smooth Wax Seal Manuscript Unroll progress (0 to 1) over 700px scroll range
-      const unroll = Math.min(1, Math.max(0, (scrollY - 40) / 700));
-      setUnrollProgress(unroll);
+      // Generous 1300px scroll runway so user feels every millimeter of the seal breaking & unroll
+      targetUnroll = Math.min(1, Math.max(0, (scrollY - 20) / 1280));
 
       const scrollPos = scrollY + 200;
       for (let i = PAGE_SECTIONS.length - 1; i >= 0; i--) {
@@ -241,9 +244,21 @@ export function MirandaNewspaper() {
       }
     };
 
+    // Smooth physics lerp loop for tactile paper weight & resistance
+    const updateLoop = () => {
+      currentUnroll += (targetUnroll - currentUnroll) * 0.09;
+      setUnrollProgress(currentUnroll);
+      animFrameId = requestAnimationFrame(updateLoop);
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    animFrameId = requestAnimationFrame(updateLoop);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(animFrameId);
+    };
   }, []);
 
   useEffect(() => {
@@ -391,9 +406,9 @@ export function MirandaNewspaper() {
     ? wireStories 
     : wireStories.filter(s => s.kicker.toLowerCase().includes(filterTag.toLowerCase()) || s.tags.some(t => t.toLowerCase().includes(filterTag.toLowerCase())));
 
-  // Progressive 3D Manuscript Unroll Calculations
+  // Progressive 3D Manuscript Unroll Calculations (Synchronized with Wax Seal crack)
   const maxRollTravel = 740;
-  const unrollRatio = Math.min(1, Math.max(0, (unrollProgress - 0.14) / 0.82));
+  const unrollRatio = Math.min(1, Math.max(0, (unrollProgress - 0.22) / 0.74));
   const revealedHeight = Math.round(unrollRatio * maxRollTravel);
 
   return (
@@ -421,7 +436,7 @@ export function MirandaNewspaper() {
       {/* Top Full-Screen Home Page Stage with Botanical Impressionist Garden Background */}
       <HomePageStage 
         onScrollToNewspaper={() => {
-          document.querySelector('.miranda-sheet')?.scrollIntoView({ behavior: 'smooth' });
+          window.scrollTo({ top: 1520, behavior: 'smooth' });
         }} 
       />
 
@@ -460,7 +475,7 @@ export function MirandaNewspaper() {
           scrollProgress={unrollProgress}
           maxRollTravel={maxRollTravel}
           onBreakSeal={() => {
-            window.scrollTo({ top: 880, behavior: 'smooth' });
+            window.scrollTo({ top: 1520, behavior: 'smooth' });
           }}
         />
 
