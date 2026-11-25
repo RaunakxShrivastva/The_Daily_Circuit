@@ -1024,6 +1024,23 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
     if (q.includes("stamp") || q.includes("celebrate")) {
       return triggerCelebration();
     }
+
+    // Connect with Botpress Webchat AI for all questions
+    const botpress = (window as unknown as {
+      botpressWebChat?: {
+        open?: () => void;
+        setDraft?: (val: string) => void;
+        focus?: () => void;
+      };
+    }).botpressWebChat;
+
+    if (botpress?.open) {
+      botpress.open();
+      if (botpress.setDraft) botpress.setDraft(query.trim());
+      botpress.focus?.();
+      return say("Connecting to Inky's Botpress AI brain...", 3200);
+    }
+
     say("Try: summarize, top repo, top model, signal, jump, or backflip.");
   };
 
@@ -1526,6 +1543,39 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
               {muted ? "Muted" : "Sound On"}
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const botpress = (window as unknown as { botpressWebChat?: { open?: () => void; focus?: () => void } }).botpressWebChat;
+              if (botpress?.open) {
+                botpress.open();
+                botpress.focus?.();
+              }
+              closeAsk();
+              playChirp(520, 680, 0.08);
+              say("Botpress AI console opened!", 2500);
+            }}
+            style={{
+              width: "100%",
+              marginTop: 9,
+              padding: "7px 10px",
+              borderRadius: 8,
+              border: "1px solid rgba(255, 69, 58, 0.45)",
+              background: "rgba(255, 69, 58, 0.16)",
+              color: "#ff6b60",
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              transition: "background 0.15s ease",
+            }}
+          >
+            <span>💬</span> Ask Inky's Botpress AI
+          </button>
         </form>
       )}
     </>

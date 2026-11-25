@@ -46,5 +46,26 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Botpress AI Integration (Inky the Press-Bot Brain) -->
+    <link rel="stylesheet" href="https://vdk-viber-runtime-prod.bot.botpress.host/edge/webchat.css" />
+    <script src="https://vdk-viber-runtime-prod.bot.botpress.host/edge/webchat.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        fetch('https://vdk-viber-runtime-prod.bot.botpress.host/edge/bots/dd58d352-864d-424a-91b4-b4d33fdee487/config')
+          .then((res) => res.json())
+          .then(({ webchat }) => {
+            if (window.VdkEdgeWebchat) {
+              window.botpressWebChat = window.VdkEdgeWebchat.mount({
+                ...webchat,
+                node: 'bubble',
+                baseUrl: 'https://vdk-viber-runtime-prod.bot.botpress.host',
+                botId: 'dd58d352-864d-424a-91b4-b4d33fdee487',
+              });
+            }
+          })
+          .catch((err) => console.warn('Botpress Webchat init notice:', err));
+      });
+    </script>
   </body>
 </html>
