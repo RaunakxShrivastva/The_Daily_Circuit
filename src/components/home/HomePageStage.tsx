@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowDown, Sparkles, BookOpen, Volume2, Plus, Compass } from "lucide-react";
+import { ArrowDown, Sparkles, Compass } from "lucide-react";
 
 interface HomePageStageProps {
   onScrollToNewspaper: () => void;
@@ -118,10 +118,10 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
         </p>
 
         {/* One-Click Action to Enter Broadsheet */}
-        <div className="pt-2">
+        <div className="pt-4">
           <button
             onClick={onScrollToNewspaper}
-            className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider text-amber-300 hover:text-neutral-950 transition-all duration-300 shadow-[0_16px_36px_rgba(0,0,0,0.7)] hover:-translate-y-0.5 cursor-pointer"
+            className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider text-amber-300 hover:text-neutral-950 transition-all duration-300 shadow-[0_16px_36px_rgba(0,0,0,0.7)] hover:-translate-y-0.5 cursor-pointer hover:bg-amber-400"
             style={{
               background: "rgba(18, 16, 13, 0.85)",
               backdropFilter: "blur(24px) saturate(190%)",
@@ -131,108 +131,13 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
             }}
           >
             <span>Open Today's 24H Broadsheet</span>
-            <ArrowDown size={14} className="text-amber-400 group-hover:translate-y-1 transition-transform" />
+            <ArrowDown size={14} className="text-amber-400 group-hover:text-neutral-950 group-hover:translate-y-1 transition-transform" />
           </button>
         </div>
       </div>
 
-      {/* Layer 5: Bento Grid Cards (Heavy Liquid Glass with Deep Refraction) */}
-      <div 
-        className="relative z-10 max-w-6xl mx-auto w-full my-8 grid grid-cols-1 md:grid-cols-3 gap-6 transition-transform duration-300 ease-out"
-        style={{
-          transform: `translate(${mouseOffset.x * 4}px, ${mouseOffset.y * 3}px)`,
-        }}
-      >
-        {/* Card 1: 24-Hour Broadsheet Portal */}
-        <div 
-          onClick={onScrollToNewspaper}
-          className="group cursor-pointer rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl flex flex-col justify-between min-h-[220px]"
-          style={{
-            background: "rgba(18, 16, 13, 0.72)",
-            backdropFilter: "blur(28px) saturate(200%)",
-            WebkitBackdropFilter: "blur(28px) saturate(200%)",
-            border: "1px solid rgba(255, 255, 255, 0.28)",
-            boxShadow: "0 24px 60px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0,0,0,0.6)",
-          }}
-        >
-          <div>
-            <div className="flex items-center justify-between text-amber-400 mb-3">
-              <BookOpen size={20} />
-              <span className="text-[9px] font-bold uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full text-white">
-                PAGE 01–08
-              </span>
-            </div>
-            <h3 className="font-serif text-xl font-bold text-white mb-2 group-hover:text-amber-300 transition-colors">
-              24-Hour Broadsheet
-            </h3>
-            <p className="text-xs text-neutral-200 leading-relaxed font-sans">
-              Continuous zero-doomscroll morning edition with 8 curated pages: Front Wire, GPU Weather, Post-Mortems, and Hardware.
-            </p>
-          </div>
-          <div className="mt-4 flex items-center gap-1.5 text-[10.5px] text-amber-300 font-bold group-hover:translate-x-1 transition-transform">
-            <span>Scroll down to read newspaper</span> ↓
-          </div>
-        </div>
-
-        {/* Card 2: 60-Second Audio Digest */}
-        <div 
-          className="rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl flex flex-col justify-between min-h-[220px]"
-          style={{
-            background: "rgba(18, 16, 13, 0.72)",
-            backdropFilter: "blur(28px) saturate(200%)",
-            WebkitBackdropFilter: "blur(28px) saturate(200%)",
-            border: "1px solid rgba(255, 255, 255, 0.28)",
-            boxShadow: "0 24px 60px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0,0,0,0.6)",
-          }}
-        >
-          <div>
-            <div className="flex items-center justify-between text-emerald-400 mb-3">
-              <Volume2 size={20} />
-              <span className="text-[9px] font-bold uppercase tracking-wider bg-emerald-950/80 border border-emerald-600/50 px-2 py-0.5 rounded-full text-emerald-300">
-                AUDIO COMPANION
-              </span>
-            </div>
-            <h3 className="font-serif text-xl font-bold text-white mb-2">
-              60-Second Audio Digest
-            </h3>
-            <p className="text-xs text-neutral-200 leading-relaxed font-sans">
-              Synthesized AI broadcaster voice summarizing today's key breakthroughs for quick morning commute listening.
-            </p>
-          </div>
-          <div className="mt-4 text-[10px] text-emerald-300 font-bold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>Docked on right margin (Click Audio tab)</span>
-          </div>
-        </div>
-
-        {/* Card 3: Custom Canvas Slot */}
-        <div 
-          className="rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl flex flex-col items-center justify-center text-center group cursor-pointer min-h-[220px]"
-          style={{
-            background: "rgba(18, 16, 13, 0.72)",
-            backdropFilter: "blur(28px) saturate(200%)",
-            WebkitBackdropFilter: "blur(28px) saturate(200%)",
-            border: "1px solid rgba(255, 255, 255, 0.28)",
-            boxShadow: "0 24px 60px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0,0,0,0.6)",
-          }}
-        >
-          <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-amber-500/20 flex items-center justify-center mb-3 transition-colors border border-white/20 group-hover:border-amber-400/50">
-            <Plus size={22} className="text-white group-hover:text-amber-300 transition-colors" />
-          </div>
-          <h3 className="font-serif text-lg font-bold text-white mb-1">
-            Build Your Home Space
-          </h3>
-          <p className="text-xs text-neutral-200 max-w-xs font-sans">
-            Yahan aap apna custom dashboard, projects, personal notes ya portfolio widgets add kar sakte hain.
-          </p>
-          <span className="mt-3 text-[9px] uppercase tracking-widest text-amber-400 font-bold">
-            [ Custom Slot Ready ]
-          </span>
-        </div>
-      </div>
-
       {/* Bottom Hint Banner before Broadsheet */}
-      <div className="relative z-10 max-w-5xl mx-auto w-full text-center pt-2">
+      <div className="relative z-10 max-w-5xl mx-auto w-full text-center pb-4">
         <button
           onClick={onScrollToNewspaper}
           className="text-[10px] uppercase tracking-widest text-white/80 hover:text-amber-300 transition-colors inline-flex items-center gap-2 font-bold cursor-pointer"
