@@ -118,40 +118,6 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
   const askOpenRef = useRef(false);
   const [query, setQuery] = useState("");
 
-  const toggleAskOpen = useCallback(() => {
-    setAskOpen((prev) => {
-      const next = !prev;
-      askOpenRef.current = next;
-      const p = phys.current;
-      if (next) {
-        // Freeze mascot completely in place
-        p.vx = 0;
-        p.vy = 0;
-        p.walkPhase = 0;
-        p.tiltDeg = 0;
-        p.spinDeg = 0;
-        p.isBackflipping = false;
-        p.scaleX = 1;
-        p.scaleY = 1;
-        p.lastActivityTime = Date.now();
-        playChirp(520, 680, 0.08);
-      } else {
-        if (!p.perchEl) {
-          p.vx = p.facing * 1.35;
-        }
-      }
-      return next;
-    });
-  }, [playChirp]);
-
-  const closeAsk = useCallback(() => {
-    setAskOpen(false);
-    askOpenRef.current = false;
-    if (!phys.current.perchEl) {
-      phys.current.vx = phys.current.facing * 1.35;
-    }
-  }, []);
-
   const inkyElRef = useRef<HTMLDivElement | null>(null);
   const bodyWrapRef = useRef<HTMLDivElement | null>(null);
   const antennaRef = useRef<SVGGElement | null>(null);
@@ -285,6 +251,40 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
     phys.current.state = nextState;
     phys.current.stateTimer = Date.now();
     setState(nextState);
+  }, []);
+
+  const toggleAskOpen = useCallback(() => {
+    setAskOpen((prev) => {
+      const next = !prev;
+      askOpenRef.current = next;
+      const p = phys.current;
+      if (next) {
+        // Freeze mascot completely in place
+        p.vx = 0;
+        p.vy = 0;
+        p.walkPhase = 0;
+        p.tiltDeg = 0;
+        p.spinDeg = 0;
+        p.isBackflipping = false;
+        p.scaleX = 1;
+        p.scaleY = 1;
+        p.lastActivityTime = Date.now();
+        playChirp(520, 680, 0.08);
+      } else {
+        if (!p.perchEl) {
+          p.vx = p.facing * 1.35;
+        }
+      }
+      return next;
+    });
+  }, [playChirp]);
+
+  const closeAsk = useCallback(() => {
+    setAskOpen(false);
+    askOpenRef.current = false;
+    if (!phys.current.perchEl) {
+      phys.current.vx = phys.current.facing * 1.35;
+    }
   }, []);
 
   // 3. Particles
