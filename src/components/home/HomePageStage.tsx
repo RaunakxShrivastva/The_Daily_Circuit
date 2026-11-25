@@ -41,7 +41,8 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
 
       {/* Layer 2: Grand Scale Renaissance Philosophers Artwork (Middleground with 3D Parallax) */}
       <div 
-        className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden transition-transform duration-300 ease-out"
+        id="home-artwork"
+        className="assemble-target absolute inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden transition-transform duration-300 ease-out"
         style={{
           transform: `translate(${mouseOffset.x * -14}px, ${mouseOffset.y * -10}px) scale(1.02)`,
         }}
@@ -80,7 +81,8 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
       >
         {/* Apple Liquid Glass Pill Badge */}
         <div 
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-widest text-white shadow-2xl"
+          id="home-pill"
+          className="assemble-target inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-widest text-white shadow-2xl"
           style={{
             background: "rgba(18, 16, 13, 0.75)",
             backdropFilter: "blur(24px) saturate(190%)",
@@ -96,7 +98,8 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
 
         {/* Master Nameplate Title with Deep Multi-Layered Drop Shadows */}
         <h1 
-          className="text-5xl sm:text-7xl md:text-8xl font-serif font-black text-white tracking-tight leading-none"
+          id="home-title"
+          className="assemble-target text-5xl sm:text-7xl md:text-8xl font-serif font-black text-white tracking-tight leading-none min-h-[1.1em]"
           style={{
             textShadow: `
               0 4px 12px rgba(0, 0, 0, 0.95),
@@ -105,11 +108,13 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
             `,
           }}
         >
-          THE DAILY CIRCUIT
+          <span id="home-title-text">THE DAILY CIRCUIT</span>
+          <span id="home-title-caret" className="inline-block w-1.5 h-[0.75em] bg-[#E04834] ml-2 align-middle animate-pulse" style={{ display: "none" }} />
         </h1>
 
         <p 
-          className="max-w-2xl mx-auto font-serif italic text-base sm:text-xl text-neutral-100 leading-snug"
+          id="home-subtitle"
+          className="assemble-target max-w-2xl mx-auto font-serif italic text-base sm:text-xl text-neutral-100 leading-snug"
           style={{
             textShadow: "0 2px 14px rgba(0,0,0,0.95), 0 8px 24px rgba(0,0,0,0.8)",
           }}
@@ -118,7 +123,7 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
         </p>
 
         {/* One-Click Action to Enter Broadsheet */}
-        <div className="pt-4">
+        <div id="home-cta" className="assemble-target pt-4">
           <button
             onClick={onScrollToNewspaper}
             className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider text-amber-300 hover:text-neutral-950 transition-all duration-300 shadow-[0_16px_36px_rgba(0,0,0,0.7)] hover:-translate-y-0.5 cursor-pointer hover:bg-amber-400"
@@ -137,7 +142,7 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
       </div>
 
       {/* Bottom Hint Banner before Broadsheet */}
-      <div className="relative z-10 max-w-5xl mx-auto w-full text-center pb-4">
+      <div id="home-hint" className="assemble-target relative z-10 max-w-5xl mx-auto w-full text-center pb-4">
         <button
           onClick={onScrollToNewspaper}
           className="text-[10px] uppercase tracking-widest text-white/80 hover:text-amber-300 transition-colors inline-flex items-center gap-2 font-bold cursor-pointer"

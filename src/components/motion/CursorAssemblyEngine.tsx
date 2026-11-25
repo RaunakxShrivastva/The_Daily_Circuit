@@ -261,6 +261,56 @@ export function CursorAssemblyEngine() {
     }, 2600);
   }, [cursorsEnabled, getTargetPoint, flyCursor, showCursorNote]);
 
+  const resetToBlank = useCallback(() => {
+    const titleEl = document.getElementById("home-title-text");
+    const caretEl = document.getElementById("home-title-caret");
+    if (titleEl) titleEl.textContent = "";
+    if (caretEl) caretEl.style.display = "none";
+
+    const targetIds = [
+      "home-artwork",
+      "home-pill",
+      "home-title",
+      "home-subtitle",
+      "home-cta",
+      "home-hint",
+    ];
+    targetIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove("assembled", "figma-flash");
+      }
+    });
+  }, []);
+
+  const typeTitle = useCallback((token: number) => {
+    return new Promise<void>((resolve) => {
+      const titleEl = document.getElementById("home-title-text");
+      const caretEl = document.getElementById("home-title-caret");
+      if (!titleEl) return resolve();
+      titleEl.textContent = "";
+      if (caretEl) caretEl.style.display = "inline-block";
+
+      const text = "THE DAILY CIRCUIT";
+      let idx = 0;
+      const interval = setInterval(() => {
+        if (token !== runTokenRef.current) {
+          clearInterval(interval);
+          if (titleEl) titleEl.textContent = text;
+          if (caretEl) caretEl.style.display = "none";
+          return resolve();
+        }
+        idx += 1;
+        titleEl.textContent = text.slice(0, idx);
+        if (idx >= text.length) {
+          clearInterval(interval);
+          if (caretEl) caretEl.style.display = "none";
+          resolve();
+        }
+      }, 55);
+    });
+  }, []);
+
   const finishAssembly = useCallback(() => {
     setIsAssembling(false);
     setShowToast(true);
@@ -271,6 +321,11 @@ export function CursorAssemblyEngine() {
   const skipAssembly = useCallback(() => {
     runTokenRef.current += 1;
     marqueeBoxRef.current?.classList.remove("active");
+
+    const titleEl = document.getElementById("home-title-text");
+    const caretEl = document.getElementById("home-title-caret");
+    if (titleEl) titleEl.textContent = "THE DAILY CIRCUIT";
+    if (caretEl) caretEl.style.display = "none";
 
     const targets = document.querySelectorAll<HTMLElement>(".assemble-target");
     targets.forEach((el) => {
@@ -302,6 +357,9 @@ export function CursorAssemblyEngine() {
     if (patrolTimerRef.current) clearInterval(patrolTimerRef.current);
     marqueeBoxRef.current?.classList.remove("active");
 
+    // 1. Wipe Home stage completely blank
+    resetToBlank();
+
     // Position cursors off-screen
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -312,80 +370,100 @@ export function CursorAssemblyEngine() {
     setCursorPos("shader", w * 0.5, h + 60, false);
     EDITORS.forEach((e) => showCursor(e.id, false));
 
-    // Phase 1 (0.0s - 1.8s): Typesetter sweeps in, targets hero title
+    // Phase 1 (0.0s - 1.8s): Typesetter sweeps in, carves out title box & types headline
     showCursor("typesetter", true);
-    const heroTitle = (document.querySelector("#home-stage h1") as HTMLElement) || document.body;
-    const titlePt = getTargetPoint(heroTitle, 0.35, 0.5);
+    const heroTitle = document.getElementById("home-title") || document.body;
+    const titlePt = getTargetPoint(heroTitle, 0.3, 0.5);
     await flyCursor("typesetter", titlePt.x, titlePt.y, 480);
     if (token !== runTokenRef.current) return;
     clickCursor("typesetter");
-    flashComponent(heroTitle, "#E04834");
 
     const heroRect = heroTitle.getBoundingClientRect();
     await dragMarquee(
       "typesetter",
       {
-        left: Math.max(20, heroRect.left - 20),
-        top: Math.max(20, heroRect.top - 15),
-        right: Math.min(w - 20, heroRect.right + 20),
-        bottom: heroRect.bottom + 15,
+        left: Math.max(20, heroRect.left - 24),
+        top: Math.max(20, heroRect.top - 18),
+        right: Math.min(w - 20, heroRect.right + 24),
+        bottom: heroRect.bottom + 18,
       },
       "#E04834",
       540,
       "dim"
     );
     if (token !== runTokenRef.current) return;
-    flashComponent(heroTitle, "#E04834");
-    showCursorNote("typesetter", "Headline & Typography Verified", 1800);
 
-    // Phase 2 (1.5s - 3.3s): Grid-Architect sweeps in & selects layout sections
+    // SNAP title into view and type letter by letter
+    flashComponent(heroTitle, "#E04834");
+    showCursorNote("typesetter", "Typesetting Playfair 800 Serif", 1800);
+    const typePromise = typeTitle(token);
+
+    // Phase 2 (1.5s - 3.2s): Grid-Architect sweeps in & snaps Badge pill and CTA button
     showCursor("architect", true);
-    const badge = (document.querySelector("#home-stage .rounded-full") as HTMLElement) || heroTitle;
-    const badgePt = getTargetPoint(badge, 0.5, 0.5);
-    await flyCursor("architect", badgePt.x, badgePt.y, 420);
+    const badgeEl = document.getElementById("home-pill") || heroTitle;
+    const badgePt = getTargetPoint(badgeEl, 0.5, 0.5);
+    await flyCursor("architect", badgePt.x, badgePt.y, 440);
     if (token !== runTokenRef.current) return;
     clickCursor("architect");
-    flashComponent(badge, "#F4EFE6");
+    flashComponent(badgeEl, "#F4EFE6");
 
-    const broadsheetBtn = (document.querySelector("#home-stage button") as HTMLElement) || heroTitle;
-    await dragMarquee("architect", broadsheetBtn.getBoundingClientRect(), "#F4EFE6", 380, "coord");
+    const ctaEl = document.getElementById("home-cta") || heroTitle;
+    await dragMarquee("architect", ctaEl.getBoundingClientRect(), "#F4EFE6", 420, "coord");
     if (token !== runTokenRef.current) return;
-    flashComponent(broadsheetBtn, "#F4EFE6");
+    flashComponent(ctaEl, "#F4EFE6");
     showCursorNote("architect", "Spatial Layout & Bento Snapped", 1800);
 
-    // Phase 3 (3.3s - 4.7s): Curator & Scout work concurrently
+    await typePromise;
+    if (token !== runTokenRef.current) return;
+
+    // Phase 3 (3.2s - 4.6s): Curator & Scout assemble Subtitle & Bottom Hint
     showCursor("curator", true);
     showCursor("scout", true);
 
     const curatorTask = async () => {
-      await flyCursor("curator", w * 0.28, h * 0.55, 580);
-      if (token !== runTokenRef.current) return;
-      clickCursor("curator");
-      showCursorNote("curator", "Verified SWE-bench +2.4%", 1800);
+      const subtitleEl = document.getElementById("home-subtitle");
+      if (subtitleEl) {
+        const pt = getTargetPoint(subtitleEl, 0.5, 0.5);
+        await flyCursor("curator", pt.x, pt.y, 520);
+        if (token !== runTokenRef.current) return;
+        clickCursor("curator");
+        flashComponent(subtitleEl, "#F59E0B");
+        showCursorNote("curator", "Verified Finite Editorial", 1800);
+      }
     };
 
     const scoutTask = async () => {
-      await flyCursor("scout", w * 0.72, h * 0.55, 620);
-      if (token !== runTokenRef.current) return;
-      clickCursor("scout");
-      showCursorNote("scout", "+3,470★ tracked in 24h", 1800);
+      const hintEl = document.getElementById("home-hint");
+      if (hintEl) {
+        const pt = getTargetPoint(hintEl, 0.5, 0.5);
+        await flyCursor("scout", pt.x, pt.y, 580);
+        if (token !== runTokenRef.current) return;
+        clickCursor("scout");
+        flashComponent(hintEl, "#10B981");
+        showCursorNote("scout", "24H Broadsheet Synced", 1800);
+      }
     };
 
     await Promise.all([curatorTask(), scoutTask()]);
     if (token !== runTokenRef.current) return;
 
-    // Phase 4 (4.7s - 6.2s): Ink-Shader activates living ink / stamp
+    // Phase 4 (4.6s - 6.0s): Ink-Shader illuminates Artwork
     showCursor("shader", true);
-    await flyCursor("shader", w * 0.5, h * 0.75, 520);
-    if (token !== runTokenRef.current) return;
-    clickCursor("shader");
-    showCursorNote("shader", "Chiaroscuro shader online", 1800);
+    const artworkEl = document.getElementById("home-artwork");
+    if (artworkEl) {
+      await flyCursor("shader", w * 0.5, h * 0.42, 540);
+      if (token !== runTokenRef.current) return;
+      clickCursor("shader");
+      flashComponent(artworkEl, "#A78BFA");
+      showCursorNote("shader", "Chiaroscuro Depth Online", 1800);
+    }
 
     await new Promise((r) => setTimeout(r, 450));
     if (token !== runTokenRef.current) return;
 
     finishAssembly();
   }, [
+    resetToBlank,
     getTargetPoint,
     flyCursor,
     clickCursor,
@@ -394,6 +472,7 @@ export function CursorAssemblyEngine() {
     showCursorNote,
     showCursor,
     setCursorPos,
+    typeTitle,
     finishAssembly,
   ]);
 
@@ -619,11 +698,23 @@ export function CursorAssemblyEngine() {
           100% { transform: translate(-50%, -50%) scale(3.4); opacity: 0; }
         }
 
+        /* Dynamic Assembly Elements: Start 100% blank, snap into view as cursors build */
+        .assemble-target {
+          opacity: 0;
+          transform: translateY(22px) scale(0.96);
+          transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: opacity, transform;
+        }
+        .assemble-target.assembled {
+          opacity: 1 !important;
+          transform: translateY(0) scale(1) !important;
+        }
+
         /* Figma Flash on Component Selection */
         .figma-flash {
-          outline: 1.5px solid var(--flash-color, #E04834) !important;
-          outline-offset: 3px;
-          box-shadow: 0 0 28px rgba(224, 72, 52, 0.18);
+          outline: 2px solid var(--flash-color, #E04834) !important;
+          outline-offset: 4px;
+          box-shadow: 0 0 32px rgba(224, 72, 52, 0.25) !important;
         }
 
         /* Pulse glow animation */
