@@ -32,8 +32,9 @@ export function ScrollCircuitPath() {
     if (!ctx) return;
 
     let animFrameId: number;
-    const DAMPING = 0.075;
-    const ECHO_DAMPING = 0.045;
+    // Snappy, responsive damping so line never lags behind user scroll
+    const DAMPING = 0.20;
+    const ECHO_DAMPING = 0.09;
 
     let targetScroll = window.scrollY;
     let currentScroll = window.scrollY;
@@ -43,10 +44,18 @@ export function ScrollCircuitPath() {
     let echoProgress = 0;
     let maxScroll = 1;
     let totalPathLength = 1;
+    let pathStartY = 120;
+    let pathEndY = 5000;
 
     let waypointRatios = [0.01, 0.26, 0.52, 0.77, 0.96];
     let waypointNodes: SVGGElement[] = [];
     const particles: Particle[] = [];
+
+    // Helper to get true document-level absolute position
+    const getAbsoluteTop = (el: HTMLElement) => {
+      const rect = el.getBoundingClientRect();
+      return rect.top + window.scrollY;
+    };
 
     // 1. Build Responsive Multi-Curve Bézier Path & Waypoints
     const buildPath = () => {
@@ -71,12 +80,12 @@ export function ScrollCircuitPath() {
       canvas.height = Math.floor(window.innerHeight * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Identify major section anchor Y coordinates
+      // Identify major section anchor Y coordinates using true document absoluteTop
       const secSelectors = ["#home-stage", "#page-01", "#page-03", "#page-05", "#page-08"];
       const anchorY = secSelectors.map((sel, idx) => {
         const el = document.querySelector(sel) as HTMLElement | null;
         if (el) {
-          return el.offsetTop + el.offsetHeight * 0.42;
+          return getAbsoluteTop(el) + el.offsetHeight * 0.42;
         }
         return (idx / (secSelectors.length - 1)) * h;
       });
@@ -90,6 +99,9 @@ export function ScrollCircuitPath() {
       const p2 = { x: rightSweep, y: Math.max(anchorY[2], p1.y + 400) };
       const p3 = { x: leftSweep + (w * 0.05), y: Math.max(anchorY[3], p2.y + 450) };
       const p4 = { x: cx, y: Math.min(h - 120, Math.max(anchorY[4], p3.y + 400)) };
+
+      pathStartY = p0.y;
+      pathEndY = p4.y;
 
       // Organic winding cubic Bézier path
       const d = [
@@ -228,6 +240,7 @@ export function ScrollCircuitPath() {
     const animate = () => {
       targetScroll = window.scrollY;
       prevScroll = currentScroll;
+      // Snappy physics tracking
       currentScroll += (targetScroll - currentScroll) * DAMPING;
 
       if (Math.abs(targetScroll - currentScroll) < 0.05) {
@@ -236,18 +249,33 @@ export function ScrollCircuitPath() {
 
       scrollVelocity = currentScroll - prevScroll;
       const absVel = Math.abs(scrollVelocity);
-      scrollProgress = Math.max(0, Math.min(1, currentScroll / maxScroll));
+
+      // Total path length
+      const totalLen = primaryPathRef.current?.getTotalLength() || totalPathLength || 1;
+
+      // Dynamic Active Viewport Tracking:
+      // At scroll 0 (Home stage): Line sits gracefully near the top header
+      // As user scrolls: Line dynamically accelerates to actively lead down the screen (~500px in front of the reader)
+      // and never lags behind or gets left above the fold.
+      const winH = window.innerHeight || 900;
+      const scrollFactor = Math.min(1, currentScroll / 450);
+      const leadOffset = winH * (0.18 + scrollFactor * 1.02);
+      const viewportTargetY = currentScroll + leadOffset;
+      const targetProgress = Math.max(0.02, Math.min(1, (viewportTargetY - pathStartY) / (pathEndY - pathStartY)));
+
+      scrollProgress += (targetProgress - scrollProgress) * DAMPING;
+      scrollProgress = Math.max(0, Math.min(1, scrollProgress));
 
       echoProgress += (scrollProgress - echoProgress) * ECHO_DAMPING;
 
-      const primaryDrawLen = totalPathLength * scrollProgress;
-      const echoDrawLen = totalPathLength * echoProgress;
+      const primaryDrawLen = totalLen * scrollProgress;
+      const echoDrawLen = totalLen * echoProgress;
 
       if (primaryPathRef.current) {
-        primaryPathRef.current.style.strokeDashoffset = `${totalPathLength - primaryDrawLen}`;
+        primaryPathRef.current.style.strokeDashoffset = `${totalLen - primaryDrawLen}`;
       }
       if (echoPathRef.current) {
-        echoPathRef.current.style.strokeDashoffset = `${totalPathLength - echoDrawLen}`;
+        echoPathRef.current.style.strokeDashoffset = `${totalLen - echoDrawLen}`;
       }
 
       // Convert path coordinates to viewport coordinates
