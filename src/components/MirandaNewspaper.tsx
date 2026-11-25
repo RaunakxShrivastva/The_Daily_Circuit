@@ -222,13 +222,13 @@ export function MirandaNewspaper() {
       setShowPageRail(scrollY > 350);
 
       // Smooth optical focus resolve as user scrolls from Home Space into Newspaper
-      const progress = Math.min(1, Math.max(0, (scrollY - 80) / 460));
-      setPaperBlur((1 - progress) * 16);
-      setPaperScale(0.96 + progress * 0.04);
-      setPaperOpacity(0.65 + progress * 0.35);
+      const progress = Math.min(1, Math.max(0, (scrollY - 100) / 600));
+      setPaperBlur((1 - progress) * 12);
+      setPaperScale(0.97 + progress * 0.03);
+      setPaperOpacity(Math.min(1, progress * 1.5));
 
-      // Smooth Wax Seal Manuscript Unroll progress (0 to 1)
-      const unroll = Math.min(1, Math.max(0, (scrollY - 30) / 450));
+      // Smooth Wax Seal Manuscript Unroll progress (0 to 1) over 700px scroll range
+      const unroll = Math.min(1, Math.max(0, (scrollY - 40) / 700));
       setUnrollProgress(unroll);
 
       const scrollPos = scrollY + 200;
@@ -391,6 +391,11 @@ export function MirandaNewspaper() {
     ? wireStories 
     : wireStories.filter(s => s.kicker.toLowerCase().includes(filterTag.toLowerCase()) || s.tags.some(t => t.toLowerCase().includes(filterTag.toLowerCase())));
 
+  // Progressive 3D Manuscript Unroll Calculations
+  const maxRollTravel = 740;
+  const unrollRatio = Math.min(1, Math.max(0, (unrollProgress - 0.14) / 0.82));
+  const revealedHeight = Math.round(unrollRatio * maxRollTravel);
+
   return (
     <div className="miranda-canvas">
       {/* Texture Grain Overlay */}
@@ -448,24 +453,28 @@ export function MirandaNewspaper() {
       {/* Docked Stageshow Mobile Companion Audio Satellite (Collapsible on the right margin) */}
       <MobileSatelliteStage />
 
-      {/* 3D Wax Seal Manuscript Unroll Transition (Unfurls from philosophers table into broadsheet) */}
-      <WaxSealManuscriptUnroll 
-        scrollProgress={unrollProgress}
-        onBreakSeal={() => {
-          document.querySelector('.miranda-sheet')?.scrollIntoView({ behavior: 'smooth' });
-        }}
-      />
+      {/* 3D Physical Manuscript Unroll Wrapper */}
+      <div className="relative max-w-[1260px] mx-auto mt-6">
+        {/* The 3D Rolling Cylinder and Wax Seal that moves down as you scroll */}
+        <WaxSealManuscriptUnroll 
+          scrollProgress={unrollProgress}
+          maxRollTravel={maxRollTravel}
+          onBreakSeal={() => {
+            window.scrollTo({ top: 880, behavior: 'smooth' });
+          }}
+        />
 
-      {/* Main Printed Broadsheet Container with 3D Perspective Unroll & Optical Blur Resolve */}
-      <main 
-        className="miranda-sheet transition-all duration-200 will-change-transform"
-        style={{
-          filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
-          transform: `perspective(1400px) rotateX(${((1 - unrollProgress) * -12).toFixed(2)}deg) scale(${paperScale.toFixed(3)})`,
-          transformOrigin: 'top center',
-          opacity: paperOpacity,
-        }}
-      >
+        {/* Main Printed Broadsheet Container with 3D Perspective Unroll & Optical Blur Resolve */}
+        <main 
+          className="miranda-sheet transition-all duration-75 will-change-transform"
+          style={{
+            clipPath: unrollProgress < 0.98 ? `inset(0 0 calc(100% - ${revealedHeight + 12}px) 0)` : undefined,
+            filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
+            transform: `perspective(1400px) rotateX(${((1 - unrollProgress) * -10).toFixed(2)}deg) scale(${paperScale.toFixed(3)})`,
+            transformOrigin: 'top center',
+            opacity: unrollProgress < 0.04 ? 0 : paperOpacity,
+          }}
+        >
         {/* Glowing Copper PCB Reading Spine on the left paper edge */}
         <div 
           className="hidden xl:block absolute left-0 top-0 bottom-0 w-[3px] pointer-events-none rounded-l-sm"
@@ -1357,6 +1366,7 @@ export function MirandaNewspaper() {
           </div>
         </footer>
       </main>
+      </div>
 
       {/* Full-Screen Interactive Story Reader (When clicking any article) */}
       {readingStory && (
