@@ -30,10 +30,13 @@ interface TrailPoint {
   life: number;
 }
 
-export function CursorAssemblyEngine() {
-  const [isAssembling, setIsAssembling] = useState(true);
-  const [cursorsEnabled, setCursorsEnabled] = useState(true);
-  const [showToast, setShowToast] = useState(false);
+interface CursorAssemblyEngineProps {
+  active?: boolean;
+}
+
+export function CursorAssemblyEngine({ active = false }: CursorAssemblyEngineProps) {
+  const [isAssembling, setIsAssembling] = useState(false);
+  const [cursorsEnabled] = useState(true);
 
   const trailCanvasRef = useRef<HTMLCanvasElement>(null);
   const cursorStageRef = useRef<HTMLDivElement>(null);
@@ -223,44 +226,6 @@ export function CursorAssemblyEngine() {
     [flyCursor, clickCursor]
   );
 
-  const startAmbientPatrol = useCallback(() => {
-    if (patrolTimerRef.current) clearInterval(patrolTimerRef.current);
-
-    const getTargets = () => {
-      const elements: HTMLElement[] = [];
-      const selectors = [
-        "#home-stage h1",
-        "#home-stage button",
-        ".miranda-sheet__stamp-row",
-        ".miranda-lead",
-        ".miranda-wire-table",
-        "#page-01",
-        "#page-02",
-      ];
-      selectors.forEach((sel) => {
-        const el = document.querySelector<HTMLElement>(sel);
-        if (el) elements.push(el);
-      });
-      return elements.length > 0 ? elements : [document.body];
-    };
-
-    patrolTimerRef.current = setInterval(() => {
-      if (!cursorsEnabled || document.hidden) return;
-      const ed = EDITORS[Math.floor(Math.random() * EDITORS.length)];
-      const targets = getTargets();
-      const targetEl = targets[Math.floor(Math.random() * targets.length)];
-      const pt = getTargetPoint(targetEl, 0.2 + Math.random() * 0.6, 0.2 + Math.random() * 0.6);
-
-      flyCursor(ed.id, pt.x, pt.y, 1400).then(() => {
-        if (cursorsEnabled) {
-          const notes = PATROL_NOTES[ed.id];
-          const note = notes[Math.floor(Math.random() * notes.length)];
-          showCursorNote(ed.id, note, 2400);
-        }
-      });
-    }, 2600);
-  }, [cursorsEnabled, getTargetPoint, flyCursor, showCursorNote]);
-
   const resetToBlank = useCallback(() => {
     const titleEl = document.getElementById("home-title-text");
     const caretEl = document.getElementById("home-title-caret");
@@ -311,16 +276,68 @@ export function CursorAssemblyEngine() {
     });
   }, []);
 
-  const finishAssembly = useCallback(() => {
+  const finishAssembly = useCallback(async () => {
     setIsAssembling(false);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3800);
-    startAmbientPatrol();
-  }, [startAmbientPatrol]);
+    marqueeBoxRef.current?.classList.remove("active");
 
-  const skipAssembly = useCallback(() => {
+    if (patrolTimerRef.current) {
+      clearInterval(patrolTimerRef.current);
+      patrolTimerRef.current = null;
+    }
+
+    // Hide any active note bubbles immediately
+    EDITORS.forEach((e) => {
+      const c = cursorsRef.current[e.id];
+      if (c?.noteEl) c.noteEl.classList.remove("show");
+    });
+
+    // Ensure all target elements are 100% assembled
+    const targets = document.querySelectorAll<HTMLElement>(".assemble-target");
+    targets.forEach((el) => {
+      el.classList.add("assembled");
+      el.classList.remove("figma-flash");
+    });
+
+    const titleEl = document.getElementById("home-title-text");
+    const caretEl = document.getElementById("home-title-caret");
+    if (titleEl) titleEl.textContent = "THE DAILY CIRCUIT";
+    if (caretEl) caretEl.style.display = "none";
+
+    // Dynamic off-screen exit coordinates based on viewport size
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const exitTargets: Record<string, { x: number; y: number }> = {
+      typesetter: { x: -220, y: -220 },
+      architect: { x: w + 220, y: -160 },
+      curator: { x: w + 220, y: h * 0.4 },
+      scout: { x: -220, y: h * 0.75 },
+      shader: { x: w * 0.5, y: h + 220 },
+    };
+
+    // Smoothly fly all 5 cursors OUT of the screen simultaneously
+    await Promise.all(
+      EDITORS.map(async (e) => {
+        const dest = exitTargets[e.id] || { x: -200, y: -200 };
+        await flyCursor(e.id, dest.x, dest.y, 650);
+        showCursor(e.id, false);
+      })
+    );
+
+    // Fade and wipe motion trails
+    trailPointsRef.current = [];
+    EDITORS.forEach((e) => {
+      showCursor(e.id, false);
+    });
+  }, [flyCursor, showCursor]);
+
+  const skipAssembly = useCallback(async () => {
     runTokenRef.current += 1;
     marqueeBoxRef.current?.classList.remove("active");
+
+    if (patrolTimerRef.current) {
+      clearInterval(patrolTimerRef.current);
+      patrolTimerRef.current = null;
+    }
 
     const titleEl = document.getElementById("home-title-text");
     const caretEl = document.getElementById("home-title-caret");
@@ -333,22 +350,35 @@ export function CursorAssemblyEngine() {
       el.classList.remove("figma-flash");
     });
 
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const pts = [
-      { x: w * 0.25, y: h * 0.28 },
-      { x: w * 0.75, y: h * 0.32 },
-      { x: w * 0.35, y: h * 0.65 },
-      { x: w * 0.68, y: h * 0.68 },
-      { x: w * 0.5, y: h * 0.8 },
-    ];
-    EDITORS.forEach((e, i) => {
-      setCursorPos(e.id, pts[i].x, pts[i].y, false);
-      showCursor(e.id, true);
+    EDITORS.forEach((e) => {
+      const c = cursorsRef.current[e.id];
+      if (c?.noteEl) c.noteEl.classList.remove("show");
     });
 
-    finishAssembly();
-  }, [setCursorPos, showCursor, finishAssembly]);
+    setIsAssembling(false);
+
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const exitTargets: Record<string, { x: number; y: number }> = {
+      typesetter: { x: -220, y: -220 },
+      architect: { x: w + 220, y: -160 },
+      curator: { x: w + 220, y: h * 0.4 },
+      scout: { x: -220, y: h * 0.75 },
+      shader: { x: w * 0.5, y: h + 220 },
+    };
+
+    // Swiftly fly out off-screen
+    await Promise.all(
+      EDITORS.map(async (e) => {
+        const dest = exitTargets[e.id] || { x: -200, y: -200 };
+        await flyCursor(e.id, dest.x, dest.y, 350);
+        showCursor(e.id, false);
+      })
+    );
+
+    trailPointsRef.current = [];
+    EDITORS.forEach((e) => showCursor(e.id, false));
+  }, [flyCursor, showCursor]);
 
   const runAssembly = useCallback(async () => {
     runTokenRef.current += 1;
@@ -513,6 +543,8 @@ export function CursorAssemblyEngine() {
     };
   }, [cursorsEnabled]);
 
+  const hasRunRef = useRef(false);
+
   // Mount setup
   useEffect(() => {
     resizeTrailCanvas();
@@ -526,32 +558,38 @@ export function CursorAssemblyEngine() {
         ...ed,
         el,
         noteEl,
-        x: -120,
-        y: -120,
+        x: -200,
+        y: -200,
         visible: false,
       };
     });
 
-    // Run initial assembly on mount
-    runAssembly();
+    // Reset Home stage elements to blank state initially
+    resetToBlank();
 
     return () => {
       window.removeEventListener("resize", resizeTrailCanvas);
       if (patrolTimerRef.current) clearInterval(patrolTimerRef.current);
     };
-  }, [resizeTrailCanvas, runAssembly]);
+  }, [resizeTrailCanvas, resetToBlank]);
 
-  const toggleCursors = () => {
-    const next = !cursorsEnabled;
-    setCursorsEnabled(next);
-    EDITORS.forEach((e) => {
-      const c = cursorsRef.current[e.id];
-      if (c?.el) {
-        c.el.classList.toggle("visible", next && c.visible);
+  // Trigger assembly when active turns true (after Cinematic Intro completes or is skipped)
+  useEffect(() => {
+    if (!active || hasRunRef.current) return;
+    hasRunRef.current = true;
+    runAssembly();
+  }, [active, runAssembly]);
+
+  // Support Escape key to skip assembly while in progress
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isAssembling) {
+        skipAssembly();
       }
-    });
-    if (!next) trailPointsRef.current = [];
-  };
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [isAssembling, skipAssembly]);
 
   return (
     <>
@@ -780,53 +818,6 @@ export function CursorAssemblyEngine() {
           Skip Intro
         </button>
       </div>
-
-      {/* Post-Assembly Interactive Mode Toast (Bottom Left) */}
-      <div
-        className={`fixed bottom-6 left-6 z-40 inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-mono text-xs font-semibold text-neutral-100 backdrop-blur-xl bg-black/90 border border-emerald-500/40 shadow-2xl transition-all duration-400 select-none ${
-          showToast ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
-        }`}
-      >
-        <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#10B981] cursor-pulse-dot" />
-        <span>EDITION #143 ASSEMBLED — INTERACTIVE MODE</span>
-      </div>
-
-      {/* Floating Quick Replay & Cursor Controls (Bottom Left - always accessible after assembly) */}
-      {!isAssembling && (
-        <div className="fixed bottom-6 left-6 z-30 hidden sm:flex items-center gap-2 select-none">
-          <button
-            type="button"
-            onClick={runAssembly}
-            title="Replay Multiplayer Cursor Assembly"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[10.5px] font-semibold text-neutral-300 hover:text-white backdrop-blur-xl bg-black/75 border border-white/10 hover:border-amber-400/40 shadow-xl transition-all cursor-pointer group"
-          >
-            <svg
-              className="w-3 h-3 group-hover:rotate-180 transition-transform duration-500 text-amber-400"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0019 13M18.4 9A8 8 0 005 11" />
-            </svg>
-            <span>Replay Assembly</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={toggleCursors}
-            title="Toggle Ambient Editorial Patrol Cursors"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[10.5px] font-semibold text-neutral-300 hover:text-white backdrop-blur-xl bg-black/75 border border-white/10 hover:border-emerald-400/40 shadow-xl transition-all cursor-pointer"
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                cursorsEnabled ? "bg-emerald-400 shadow-[0_0_8px_#10B981]" : "bg-neutral-500"
-              }`}
-            />
-            <span>{cursorsEnabled ? "Cursors: Live" : "Cursors: Off"}</span>
-          </button>
-        </div>
-      )}
     </>
   );
 }

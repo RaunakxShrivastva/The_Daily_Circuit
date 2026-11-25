@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { FiniteBroadsheet } from "./components/FiniteBroadsheet";
 import { MirandaNewspaper } from "./components/MirandaNewspaper";
 import { LiquidGlassNavbar } from "./components/navigation/LiquidGlassNavbar";
+import { CinematicIntroOverlay } from "./components/motion/CinematicIntroOverlay";
 import { CursorAssemblyEngine } from "./components/motion/CursorAssemblyEngine";
 
 export default function App() {
@@ -34,8 +35,11 @@ export default function App() {
         backgroundColor: "#0d0b09",
       }}
     >
+      {/* Cinematic Linotype Stamp Awakening on Initial Landing */}
+      <CinematicIntroOverlay onComplete={handleIntroComplete} />
+
       {/* 5 Autonomous AI Editors Multiplayer Cursor Assembly Engine */}
-      <CursorAssemblyEngine />
+      <CursorAssemblyEngine active={introDone} />
 
       {/* Impressionist Botanical Oil Painting Background */}
       <div 
