@@ -8,13 +8,15 @@ interface CinematicIntroOverlayProps {
 export function CinematicIntroOverlay({ onComplete }: CinematicIntroOverlayProps) {
   const [phase, setPhase] = useState<"idle" | "hands" | "trace" | "stamp" | "unveil" | "done">("idle");
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   const finishIntro = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
     setPhase("done");
-    if (onComplete) onComplete();
-  }, [onComplete]);
+    if (onCompleteRef.current) onCompleteRef.current();
+  }, []);
 
   useEffect(() => {
     // Stage 1: Artwork hands and constellation illuminate softly (150ms)

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FiniteBroadsheet } from "./components/FiniteBroadsheet";
 import { MirandaNewspaper } from "./components/MirandaNewspaper";
 import { LiquidGlassNavbar } from "./components/navigation/LiquidGlassNavbar";
@@ -7,6 +7,11 @@ import { CinematicIntroOverlay } from "./components/motion/CinematicIntroOverlay
 export default function App() {
   const [viewMode, setViewMode] = useState<"3d" | "miranda">("miranda");
   const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
+  const [introDone, setIntroDone] = useState(false);
+
+  const handleIntroComplete = useCallback(() => {
+    setIntroDone(true);
+  }, []);
 
   // Interactive ambient desk spotlight tracking mouse
   useEffect(() => {
@@ -30,7 +35,7 @@ export default function App() {
       }}
     >
       {/* Cinematic Linotype Stamp Awakening on Initial Landing */}
-      <CinematicIntroOverlay />
+      <CinematicIntroOverlay onComplete={handleIntroComplete} />
 
       {/* Impressionist Botanical Oil Painting Background */}
       <div 
@@ -58,8 +63,12 @@ export default function App() {
         }}
       />
 
-      {/* Apple Liquid Glass Floating Capsule Navbar (Refracts the garden colors through blur) */}
-      <LiquidGlassNavbar viewMode={viewMode} onViewChange={setViewMode} />
+      {/* Dynamic Mac Notch / Apple Liquid Glass Floating Capsule Navbar */}
+      <LiquidGlassNavbar 
+        viewMode={viewMode} 
+        onViewChange={setViewMode} 
+        startExpandedTrigger={introDone}
+      />
 
       {/* Main Experience View (Full bleed, no top padding gap) */}
       <div className="relative z-10">
