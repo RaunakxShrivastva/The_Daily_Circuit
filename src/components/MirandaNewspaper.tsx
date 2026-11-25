@@ -44,6 +44,7 @@ import { SiliconExplorerStage } from './motion/SiliconExplorerStage';
 import { TelegraphTicker } from './motion/TelegraphTicker';
 import { HomePageStage } from './home/HomePageStage';
 import { ScrollCircuitPath } from './motion/ScrollCircuitPath';
+import { WaxSealManuscriptUnroll } from './motion/WaxSealManuscriptUnroll';
 
 const PAGE_SECTIONS = [
   { id: 'page-01', num: '01', roman: 'I', label: 'Front Page & Wire', short: 'Front Wire', edge: 'PAGE 01 · WIRE' },
@@ -197,6 +198,7 @@ export function MirandaNewspaper() {
   const [paperBlur, setPaperBlur] = useState(14);
   const [paperScale, setPaperScale] = useState(0.96);
   const [paperOpacity, setPaperOpacity] = useState(0.7);
+  const [unrollProgress, setUnrollProgress] = useState(0);
 
   const [pipelineEdition, setPipelineEdition] = useState<any>(null);
 
@@ -224,6 +226,10 @@ export function MirandaNewspaper() {
       setPaperBlur((1 - progress) * 16);
       setPaperScale(0.96 + progress * 0.04);
       setPaperOpacity(0.65 + progress * 0.35);
+
+      // Smooth Wax Seal Manuscript Unroll progress (0 to 1)
+      const unroll = Math.min(1, Math.max(0, (scrollY - 30) / 450));
+      setUnrollProgress(unroll);
 
       const scrollPos = scrollY + 200;
       for (let i = PAGE_SECTIONS.length - 1; i >= 0; i--) {
@@ -442,12 +448,21 @@ export function MirandaNewspaper() {
       {/* Docked Stageshow Mobile Companion Audio Satellite (Collapsible on the right margin) */}
       <MobileSatelliteStage />
 
-      {/* Main Printed Broadsheet Container with Optical Blur Resolve */}
+      {/* 3D Wax Seal Manuscript Unroll Transition (Unfurls from philosophers table into broadsheet) */}
+      <WaxSealManuscriptUnroll 
+        scrollProgress={unrollProgress}
+        onBreakSeal={() => {
+          document.querySelector('.miranda-sheet')?.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
+
+      {/* Main Printed Broadsheet Container with 3D Perspective Unroll & Optical Blur Resolve */}
       <main 
-        className="miranda-sheet transition-all duration-150 will-change-transform"
+        className="miranda-sheet transition-all duration-200 will-change-transform"
         style={{
           filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
-          transform: `scale(${paperScale.toFixed(3)})`,
+          transform: `perspective(1400px) rotateX(${((1 - unrollProgress) * -12).toFixed(2)}deg) scale(${paperScale.toFixed(3)})`,
+          transformOrigin: 'top center',
           opacity: paperOpacity,
         }}
       >
