@@ -188,8 +188,17 @@ export function ScrollCircuitPath() {
       }
     };
 
-    const renderCanvasTipAndSparks = (tipX: number, tipY: number, speed: number) => {
+    const renderCanvasTipAndSparks = (tipX: number, tipY: number, speed: number, progress: number) => {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      // When resting at origin (scroll = 0), line is docked inside starting node with no flare
+      if (progress <= 0.0005) {
+        particles.length = 0;
+        return;
+      }
+
+      // Smooth opacity ramp as line emerges from starting point
+      const tipAlpha = Math.min(1, progress * 80);
 
       if (speed > 1.2 && tipY > -40 && tipY < window.innerHeight + 40) {
         spawnSparks(tipX, tipY, speed);
@@ -211,8 +220,8 @@ export function ScrollCircuitPath() {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
         ctx.fillStyle = p.isRed
-          ? `rgba(255, 59, 47, ${p.life * 0.9})`
-          : `rgba(255, 255, 255, ${p.life * 0.85})`;
+          ? `rgba(255, 59, 47, ${p.life * 0.9 * tipAlpha})`
+          : `rgba(255, 255, 255, ${p.life * 0.85 * tipAlpha})`;
         ctx.fill();
       }
 
@@ -220,8 +229,8 @@ export function ScrollCircuitPath() {
       if (tipY > -60 && tipY < window.innerHeight + 60) {
         const glowRadius = 18 + Math.min(20, speed * 0.6);
         const grad = ctx.createRadialGradient(tipX, tipY, 0, tipX, tipY, glowRadius);
-        grad.addColorStop(0, "rgba(255, 255, 255, 1)");
-        grad.addColorStop(0.3, "rgba(255, 59, 47, 0.75)");
+        grad.addColorStop(0, `rgba(255, 255, 255, ${tipAlpha})`);
+        grad.addColorStop(0.3, `rgba(255, 59, 47, ${0.75 * tipAlpha})`);
         grad.addColorStop(1, "rgba(255, 59, 47, 0)");
 
         ctx.beginPath();
@@ -231,7 +240,7 @@ export function ScrollCircuitPath() {
 
         ctx.beginPath();
         ctx.arc(tipX, tipY, 3.5, 0, Math.PI * 2);
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = `rgba(255, 255, 255, ${tipAlpha})`;
         ctx.fill();
       }
     };
@@ -246,6 +255,9 @@ export function ScrollCircuitPath() {
       if (Math.abs(targetScroll - currentScroll) < 0.05) {
         currentScroll = targetScroll;
       }
+      if (currentScroll < 12) {
+        currentScroll = 0;
+      }
 
       scrollVelocity = currentScroll - prevScroll;
       const absVel = Math.abs(scrollVelocity);
@@ -254,19 +266,31 @@ export function ScrollCircuitPath() {
       const totalLen = primaryPathRef.current?.getTotalLength() || totalPathLength || 1;
 
       // Dynamic Active Viewport Tracking:
-      // At scroll 0 (Home stage): Line sits gracefully near the top header
-      // As user scrolls: Line dynamically accelerates to actively lead down the screen (~500px in front of the reader)
-      // and never lags behind or gets left above the fold.
+      // At scroll 0 (Home stage): Line rests completely docked inside starting node (progress = 0)
+      // As user scrolls: Line emerges from starting point and dynamically leads ahead down the screen
+      // On reverse scroll: Line smoothly retracts all the way back into the starting node (progress -> 0)
       const winH = window.innerHeight || 900;
-      const scrollFactor = Math.min(1, currentScroll / 450);
-      const leadOffset = winH * (0.18 + scrollFactor * 1.02);
-      const viewportTargetY = currentScroll + leadOffset;
-      const targetProgress = Math.max(0.02, Math.min(1, (viewportTargetY - pathStartY) / (pathEndY - pathStartY)));
+      let targetProgress = 0;
+
+      if (currentScroll > 12) {
+        const scrollFactor = Math.min(1, currentScroll / 450);
+        const leadOffset = winH * (scrollFactor * 0.92);
+        const viewportTargetY = currentScroll + leadOffset;
+        const rawProgress = (viewportTargetY - pathStartY) / (pathEndY - pathStartY);
+        targetProgress = Math.max(0, Math.min(1, rawProgress));
+      }
 
       scrollProgress += (targetProgress - scrollProgress) * DAMPING;
+      if (currentScroll === 0 || (targetProgress === 0 && scrollProgress < 0.015)) {
+        scrollProgress = 0;
+      }
       scrollProgress = Math.max(0, Math.min(1, scrollProgress));
 
-      echoProgress += (scrollProgress - echoProgress) * ECHO_DAMPING;
+      echoProgress += (scrollProgress - echoProgress) * (targetProgress === 0 ? 0.35 : ECHO_DAMPING);
+      if (scrollProgress === 0 || (targetProgress === 0 && echoProgress < 0.015)) {
+        echoProgress = 0;
+      }
+      echoProgress = Math.max(0, Math.min(1, echoProgress));
 
       const primaryDrawLen = totalLen * scrollProgress;
       const echoDrawLen = totalLen * echoProgress;
@@ -277,21 +301,29 @@ export function ScrollCircuitPath() {
       if (echoPathRef.current) {
         echoPathRef.current.style.strokeDashoffset = `${totalLen - echoDrawLen}`;
       }
+      if (railPathRef.current) {
+        railPathRef.current.style.opacity = scrollProgress > 0.002 ? "1" : "0";
+      }
 
       // Convert path coordinates to viewport coordinates
       if (primaryPathRef.current) {
         try {
           const tipPt = primaryPathRef.current.getPointAtLength(primaryDrawLen);
           const viewportTipY = tipPt.y - currentScroll;
-          renderCanvasTipAndSparks(tipPt.x, viewportTipY, absVel);
+          renderCanvasTipAndSparks(tipPt.x, viewportTipY, absVel, scrollProgress);
         } catch {
           // ignore
         }
       }
 
-      // Ignite Waypoints
+      // Ignite Waypoints: only ignite starting node (idx 0) once scroll begins
       waypointRatios.forEach((ratio, idx) => {
-        const isReached = scrollProgress >= ratio - 0.03;
+        let isReached = false;
+        if (idx === 0) {
+          isReached = scrollProgress > 0.005;
+        } else {
+          isReached = scrollProgress >= ratio - 0.02;
+        }
         if (waypointNodes[idx]) {
           waypointNodes[idx].classList.toggle("ignited", isReached);
         }
@@ -416,6 +448,7 @@ export function ScrollCircuitPath() {
           stroke="rgba(255, 255, 255, 0.08)"
           strokeWidth="1"
           strokeDasharray="4 8"
+          style={{ transition: "opacity 0.35s ease", opacity: 0 }}
         />
 
         {/* Strand 2: Velocity-Lagged Harmonic Echo */}
