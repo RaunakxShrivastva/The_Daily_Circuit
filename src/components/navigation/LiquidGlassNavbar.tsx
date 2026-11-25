@@ -7,10 +7,11 @@ interface LiquidGlassNavbarProps {
 }
 
 export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarProps) {
-  const [activeState, setActiveState] = useState<"idle" | "search" | "audio">("idle");
+  const [activeState, setActiveState] = useState<"collapsed" | "idle" | "search" | "audio">("collapsed");
   const [activeSection, setActiveSection] = useState("front");
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentTime, setCurrentTime] = useState("");
 
   const notchRef = useRef<HTMLElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -24,16 +25,31 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
   const RADIUS = 24;
 
   const STATES: Record<string, { w: number; h: number }> = {
+    collapsed: { w: 180, h: 34 },
     idle: { w: 520, h: 46 },
     search: { w: 540, h: 124 },
     audio: { w: 480, h: 118 },
   };
 
-  const currentRef = useRef({ w: 520, h: 46 });
-  const targetRef = useRef({ ...STATES.idle });
+  // Start in collapsed state initially
+  const currentRef = useRef({ w: 180, h: 34 });
+  const targetRef = useRef({ ...STATES.collapsed });
   const velRef = useRef({ w: 0, h: 0 });
 
-  // 1. Generate Optical Refraction Normal Map for Liquid Glass
+  // 1. Live Time Formatting (e.g. "6:14" or "13:10")
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, "0");
+      setCurrentTime(`${hours}:${minutes}`);
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 2. Optical Refraction Normal Map for Liquid Glass
   useEffect(() => {
     const mapCanvas = document.createElement("canvas");
     mapCanvas.width = 256;
@@ -62,7 +78,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     }
   }, []);
 
-  // 2. Build Continuous MacBook Notch SVG Path (Concave ears at top + rounded bottom)
+  // 3. Build MacBook Notch SVG Path (Concave ears at top + rounded bottom)
   const buildNotchPath = useCallback(
     (bodyW: number, bodyH: number, close: boolean) => {
       const totalW = bodyW + EAR * 2;
@@ -82,7 +98,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     [EAR, RADIUS]
   );
 
-  // 3. 60 FPS Spring Physics Animation Loop
+  // 4. Spring Physics 60 FPS Animation Loop
   useEffect(() => {
     let animId: number;
 
@@ -113,7 +129,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
         rimPathEl.setAttribute("d", buildNotchPath(currentRef.current.w, currentRef.current.h, false));
       }
 
-      // Dynamic Reading Progress Line along Bottom Horizontal Lip
+      // Reading Progress Line along Bottom Horizontal Lip
       if (progressPathEl) {
         const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
         const pct = Math.min(1, Math.max(0, window.scrollY / maxScroll));
@@ -123,7 +139,8 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
         progressPathEl.setAttribute("d", `M ${x1} ${currentRef.current.h - 1} L ${x2} ${currentRef.current.h - 1}`);
         progressPathEl.style.strokeDasharray = `${len}`;
         progressPathEl.style.strokeDashoffset = `${len * (1 - pct)}`;
-        progressPathEl.style.opacity = pct > 0.01 ? "1" : "0";
+        // Only show progress bar when expanded and scrolled
+        progressPathEl.style.opacity = currentRef.current.w > 300 && pct > 0.01 ? "1" : "0";
       }
 
       animId = requestAnimationFrame(tick);
@@ -132,6 +149,36 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     animId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animId);
   }, [buildNotchPath, EAR, RADIUS]);
+
+  // 5. Scroll Tracking: At top -> Collapsed Notch; When scrolled -> Expands into full Notch Navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+
+      if (scrollY > 30) {
+        // Expand into full notch navbar when scrolled
+        setActiveState((prev) => {
+          if (prev === "collapsed") {
+            targetRef.current = { ...STATES.idle };
+            return "idle";
+          }
+          return prev;
+        });
+      } else if (scrollY <= 12) {
+        // Automatically collapse back into compact notch when at the top
+        setActiveState((prev) => {
+          if (prev === "idle") {
+            targetRef.current = { ...STATES.collapsed };
+            return "collapsed";
+          }
+          return prev;
+        });
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [STATES]);
 
   // Handle Specular Sheen Tracking
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -143,7 +190,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
   };
 
   // State Transition Morph
-  const setNotchState = useCallback((next: "idle" | "search" | "audio") => {
+  const setNotchState = useCallback((next: "collapsed" | "idle" | "search" | "audio") => {
     setActiveState((prev) => {
       const state = prev === next ? "idle" : next;
       targetRef.current = { ...STATES[state] };
@@ -154,14 +201,25 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     });
   }, [STATES]);
 
+  // Expand when clicked in collapsed mode
+  const handleShellClick = () => {
+    if (activeState === "collapsed") {
+      setNotchState("idle");
+    }
+  };
+
   // Global Keyboard Shortcuts (⌘K / Ctrl+K & Escape)
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setNotchState("search");
-      } else if (e.key === "Escape" && activeState !== "idle") {
-        setNotchState("idle");
+      } else if (e.key === "Escape") {
+        if (activeState === "search" || activeState === "audio") {
+          setNotchState("idle");
+        } else if (activeState === "idle" && window.scrollY <= 30) {
+          setNotchState("collapsed");
+        }
       }
     };
     window.addEventListener("keydown", handleKey);
@@ -237,7 +295,12 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
 
       {/* Dynamic Notch Top Navbar */}
       <nav id="liquid-notch" ref={notchRef} data-state={activeState} aria-label="Dynamic Notch Navigation">
-        <div className="notch-shell" ref={shellRef} onMouseMove={handleMouseMove}>
+        <div
+          className={`notch-shell ${activeState === "collapsed" ? "cursor-pointer" : ""}`}
+          ref={shellRef}
+          onClick={handleShellClick}
+          onMouseMove={handleMouseMove}
+        >
           {/* Optical Liquid Glass Backdrop */}
           <div className="notch-glass-bg" />
           <div className="notch-specular" />
@@ -262,109 +325,143 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
             />
           </svg>
 
-          {/* Primary Notch Bar Content */}
-          <div className="notch-content">
-            <div className="notch-top-row">
-              <button
-                type="button"
-                onClick={() => scrollToSection("home-stage", "home")}
-                className="notch-brand cursor-pointer bg-transparent border-0 p-0 text-left"
-              >
-                <span className="notch-dot" />
-                <span>CIRCUIT</span>
-              </button>
-
-              <div className="notch-links">
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("page-01", "front")}
-                  className={`notch-link cursor-pointer ${activeSection === "front" ? "active" : ""}`}
-                >
-                  Front
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("page-02", "models")}
-                  className={`notch-link cursor-pointer ${activeSection === "models" ? "active" : ""}`}
-                >
-                  Models
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("page-04", "repos")}
-                  className={`notch-link cursor-pointer ${activeSection === "repos" ? "active" : ""}`}
-                >
-                  Repos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onViewChange(viewMode === "3d" ? "miranda" : "3d")}
-                  className={`notch-link cursor-pointer ${viewMode === "3d" ? "active" : ""}`}
-                  title="Toggle 3D Tactile Broadsheet / Miranda Reader"
-                >
-                  {viewMode === "3d" ? "3D Paper" : "3D Mode"}
-                </button>
-              </div>
-
-              <div className="notch-actions">
-                <button
-                  type="button"
-                  onClick={() => setNotchState("search")}
-                  className={`notch-btn cursor-pointer ${activeState === "search" ? "active" : ""}`}
-                  aria-label="Search"
-                >
-                  ⌘K
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNotchState("audio")}
-                  className={`notch-btn cursor-pointer ${activeState === "audio" ? "active" : ""}`}
-                  aria-label="Audio Brief"
-                >
-                  {isPlayingAudio ? "❚❚ 60s" : "60s"}
-                </button>
-              </div>
+          {/* ======================================================== */}
+          {/* STATE A: COLLAPSED NOTCH (Clock / Status Display)        */}
+          {/* ======================================================== */}
+          {activeState === "collapsed" ? (
+            <div className="notch-collapsed-content">
+              <span className="notch-clock-text">
+                {currentTime || "6:14"}
+              </span>
             </div>
-
-            {/* Expanded Search State Panel */}
-            <div className="notch-panel" data-panel="search">
-              <form onSubmit={handleSearchSubmit}>
-                <input
-                  type="text"
-                  id="notch-search-input"
-                  ref={searchInputRef}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search issues, models, repos..."
-                  autoComplete="off"
-                />
-              </form>
-              <div className="notch-hints">
-                <span>Press Enter to Navigate</span>
-                <span>ESC Close</span>
-              </div>
-            </div>
-
-            {/* Expanded Audio State Panel */}
-            <div className="notch-panel" data-panel="audio">
-              <div className="notch-audio-row">
-                <button type="button" id="notch-play-btn" onClick={togglePlayAudio} className="notch-play">
-                  {isPlayingAudio ? "❚❚" : "▶"}
+          ) : (
+            /* ======================================================== */
+            /* STATE B: EXPANDED NOTCH (Full Bar, Search or Audio)      */
+            /* ======================================================== */
+            <div className="notch-content">
+              <div className="notch-top-row">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    scrollToSection("home-stage", "home");
+                  }}
+                  className="notch-brand cursor-pointer bg-transparent border-0 p-0 text-left"
+                >
+                  <span className="notch-dot" />
+                  <span>CIRCUIT</span>
                 </button>
-                <div className="notch-audio-meta">
-                  <strong>60-Second Daily Brief</strong>
-                  <span>Issue #143 · AI &amp; Systems</span>
+
+                <div className="notch-links">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scrollToSection("page-01", "front");
+                    }}
+                    className={`notch-link cursor-pointer ${activeSection === "front" ? "active" : ""}`}
+                  >
+                    Front
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scrollToSection("page-02", "models");
+                    }}
+                    className={`notch-link cursor-pointer ${activeSection === "models" ? "active" : ""}`}
+                  >
+                    Models
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scrollToSection("page-04", "repos");
+                    }}
+                    className={`notch-link cursor-pointer ${activeSection === "repos" ? "active" : ""}`}
+                  >
+                    Repos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewChange(viewMode === "3d" ? "miranda" : "3d");
+                    }}
+                    className={`notch-link cursor-pointer ${viewMode === "3d" ? "active" : ""}`}
+                    title="Toggle 3D Tactile Broadsheet / Miranda Reader"
+                  >
+                    {viewMode === "3d" ? "3D Paper" : "3D Mode"}
+                  </button>
                 </div>
-                <div className={`notch-eq ${isPlayingAudio ? "playing" : ""}`} id="notch-eq">
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
+
+                <div className="notch-actions">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setNotchState("search");
+                    }}
+                    className={`notch-btn cursor-pointer ${activeState === "search" ? "active" : ""}`}
+                    aria-label="Search"
+                  >
+                    ⌘K
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setNotchState("audio");
+                    }}
+                    className={`notch-btn cursor-pointer ${activeState === "audio" ? "active" : ""}`}
+                    aria-label="Audio Brief"
+                  >
+                    {isPlayingAudio ? "❚❚ 60s" : "60s"}
+                  </button>
                 </div>
               </div>
+
+              {/* Expanded Search State Panel */}
+              <div className="notch-panel" data-panel="search">
+                <form onSubmit={handleSearchSubmit}>
+                  <input
+                    type="text"
+                    id="notch-search-input"
+                    ref={searchInputRef}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search issues, models, repos..."
+                    autoComplete="off"
+                  />
+                </form>
+                <div className="notch-hints">
+                  <span>Press Enter to Navigate</span>
+                  <span>ESC Close</span>
+                </div>
+              </div>
+
+              {/* Expanded Audio State Panel */}
+              <div className="notch-panel" data-panel="audio">
+                <div className="notch-audio-row">
+                  <button type="button" id="notch-play-btn" onClick={togglePlayAudio} className="notch-play">
+                    {isPlayingAudio ? "❚❚" : "▶"}
+                  </button>
+                  <div className="notch-audio-meta">
+                    <strong>60-Second Daily Brief</strong>
+                    <span>Issue #143 · AI &amp; Systems</span>
+                  </div>
+                  <div className={`notch-eq ${isPlayingAudio ? "playing" : ""}`} id="notch-eq">
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </nav>
 
@@ -393,8 +490,8 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
           clip-path: url(#notch-clip);
           background: linear-gradient(
             180deg,
-            rgba(22, 22, 26, 0.75) 0%,
-            rgba(16, 16, 20, 0.60) 100%
+            rgba(22, 22, 26, 0.78) 0%,
+            rgba(16, 16, 20, 0.62) 100%
           );
           backdrop-filter: url(#liquid-glass-refract) blur(24px) saturate(190%);
           -webkit-backdrop-filter: blur(24px) saturate(190%);
@@ -425,11 +522,40 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
           overflow: visible;
         }
 
+        /* Collapsed Notch Content */
+        .notch-collapsed-content {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 24px;
+          box-sizing: border-box;
+          animation: notchFadeIn 0.25s ease-out forwards;
+        }
+
+        .notch-clock-text {
+          font-size: 13px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.95);
+          letter-spacing: -0.01em;
+          text-align: center;
+        }
+
+        /* Expanded Notch Content */
         .notch-content {
           position: relative;
           z-index: 2;
           padding: 0 32px; /* Clears the 22px concave ears on each side */
           box-sizing: border-box;
+          animation: notchFadeIn 0.25s ease-out forwards;
+        }
+
+        @keyframes notchFadeIn {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
         }
 
         .notch-top-row {
