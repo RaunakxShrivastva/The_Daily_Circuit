@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Sparkles, Layers, Volume2, VolumeX, Compass, ChevronUp } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 interface LiquidGlassNavbarProps {
   viewMode: "3d" | "miranda";
@@ -8,287 +7,618 @@ interface LiquidGlassNavbarProps {
 }
 
 export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarProps) {
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [manualExpanded, setManualExpanded] = useState<boolean | null>(null);
+  const [activeState, setActiveState] = useState<"idle" | "search" | "audio">("idle");
+  const [activeSection, setActiveSection] = useState("front");
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [isAudioHovered, setIsAudioHovered] = useState(false);
-  const [currentTime, setCurrentTime] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Live clock formatted exactly like Mac status bar (e.g., "5:34")
+  const notchRef = useRef<HTMLElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const clipPathRef = useRef<SVGPathElement>(null);
+  const rimPathRef = useRef<SVGPathElement>(null);
+  const progressPathRef = useRef<SVGPathElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // MacBook Notch Geometry Constants
+  const EAR = 22;
+  const RADIUS = 24;
+
+  const STATES: Record<string, { w: number; h: number }> = {
+    idle: { w: 520, h: 46 },
+    search: { w: 540, h: 124 },
+    audio: { w: 480, h: 118 },
+  };
+
+  const currentRef = useRef({ w: 520, h: 46 });
+  const targetRef = useRef({ ...STATES.idle });
+  const velRef = useRef({ w: 0, h: 0 });
+
+  // 1. Generate Optical Refraction Normal Map for Liquid Glass
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes().toString().padStart(2, "0");
-      setCurrentTime(`${hours}:${minutes}`);
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
+    const mapCanvas = document.createElement("canvas");
+    mapCanvas.width = 256;
+    mapCanvas.height = 128;
+    const ctx = mapCanvas.getContext("2d");
+    if (ctx) {
+      const img = ctx.createImageData(256, 128);
+      for (let y = 0; y < 128; y++) {
+        for (let x = 0; x < 256; x++) {
+          const nx = (x / 255) * 2 - 1;
+          const ny = (y / 127) * 2 - 1;
+          const edgeX = Math.pow(Math.abs(nx), 3) * Math.sign(nx);
+          const edgeY = Math.pow(Math.abs(ny), 3) * Math.sign(ny);
+          const i = (y * 256 + x) * 4;
+          img.data[i] = Math.round(128 + edgeX * 127); // R = X refraction
+          img.data[i + 1] = Math.round(128 + edgeY * 127); // G = Y refraction
+          img.data[i + 2] = 255;
+          img.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const normalMapEl = document.getElementById("notch-normal-map");
+      if (normalMapEl) {
+        normalMapEl.setAttribute("href", mapCanvas.toDataURL());
+      }
+    }
   }, []);
 
-  // Track scroll position: At top -> Solid Mac Notch; When scrolled -> Apple Liquid Glass
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const scrolled = scrollY > 25;
-      setIsScrolled(scrolled);
-      // Reset manual toggle on significant scroll change
-      setManualExpanded(null);
+  // 2. Build Continuous MacBook Notch SVG Path (Concave ears at top + rounded bottom)
+  const buildNotchPath = useCallback(
+    (bodyW: number, bodyH: number, close: boolean) => {
+      const totalW = bodyW + EAR * 2;
+      const r = Math.min(RADIUS, bodyH / 2);
+      const d = [
+        `M 0 0`,
+        `Q ${EAR} 0 ${EAR} ${EAR}`,
+        `L ${EAR} ${bodyH - r}`,
+        `Q ${EAR} ${bodyH} ${EAR + r} ${bodyH}`,
+        `L ${EAR + bodyW - r} ${bodyH}`,
+        `Q ${EAR + bodyW} ${bodyH} ${EAR + bodyW} ${bodyH - r}`,
+        `L ${EAR + bodyW} ${EAR}`,
+        `Q ${EAR + bodyW} 0 ${totalW} 0`,
+      ].join(" ");
+      return close ? `${d} Z` : d;
+    },
+    [EAR, RADIUS]
+  );
 
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const progress = Math.min(100, Math.max(0, Math.round((scrollY / totalHeight) * 100)));
-        setScrollProgress(progress);
+  // 3. 60 FPS Spring Physics Animation Loop
+  useEffect(() => {
+    let animId: number;
+
+    const tick = () => {
+      const stiffness = 0.16;
+      const damping = 0.72;
+
+      velRef.current.w = (velRef.current.w + (targetRef.current.w - currentRef.current.w) * stiffness) * damping;
+      velRef.current.h = (velRef.current.h + (targetRef.current.h - currentRef.current.h) * stiffness) * damping;
+      currentRef.current.w += velRef.current.w;
+      currentRef.current.h += velRef.current.h;
+
+      const shell = shellRef.current;
+      const clipPathEl = clipPathRef.current;
+      const rimPathEl = rimPathRef.current;
+      const progressPathEl = progressPathRef.current;
+
+      const totalW = currentRef.current.w + EAR * 2;
+      if (shell) {
+        shell.style.width = `${totalW.toFixed(1)}px`;
+        shell.style.height = `${currentRef.current.h.toFixed(1)}px`;
+      }
+
+      if (clipPathEl) {
+        clipPathEl.setAttribute("d", buildNotchPath(currentRef.current.w, currentRef.current.h, true));
+      }
+      if (rimPathEl) {
+        rimPathEl.setAttribute("d", buildNotchPath(currentRef.current.w, currentRef.current.h, false));
+      }
+
+      // Dynamic Reading Progress Line along Bottom Horizontal Lip
+      if (progressPathEl) {
+        const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        const pct = Math.min(1, Math.max(0, window.scrollY / maxScroll));
+        const x1 = EAR + RADIUS;
+        const x2 = EAR + currentRef.current.w - RADIUS;
+        const len = Math.max(0, x2 - x1);
+        progressPathEl.setAttribute("d", `M ${x1} ${currentRef.current.h - 1} L ${x2} ${currentRef.current.h - 1}`);
+        progressPathEl.style.strokeDasharray = `${len}`;
+        progressPathEl.style.strokeDashoffset = `${len * (1 - pct)}`;
+        progressPathEl.style.opacity = pct > 0.01 ? "1" : "0";
+      }
+
+      animId = requestAnimationFrame(tick);
+    };
+
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [buildNotchPath, EAR, RADIUS]);
+
+  // Handle Specular Sheen Tracking
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    const rect = shell.getBoundingClientRect();
+    shell.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+    shell.style.setProperty("--my", `${e.clientY - rect.top}px`);
+  };
+
+  // State Transition Morph
+  const setNotchState = useCallback((next: "idle" | "search" | "audio") => {
+    setActiveState((prev) => {
+      const state = prev === next ? "idle" : next;
+      targetRef.current = { ...STATES[state] };
+      if (state === "search") {
+        setTimeout(() => searchInputRef.current?.focus(), 80);
+      }
+      return state;
+    });
+  }, [STATES]);
+
+  // Global Keyboard Shortcuts (⌘K / Ctrl+K & Escape)
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setNotchState("search");
+      } else if (e.key === "Escape" && activeState !== "idle") {
+        setNotchState("idle");
       }
     };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [activeState, setNotchState]);
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Initial check
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Determine if navbar is expanded into Liquid Glass or collapsed as Solid Mac Notch
-  const isExpanded = manualExpanded !== null ? manualExpanded : isScrolled;
-
-  // Quick 60s broadcast toggle
-  const toggleAudio = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    let audioEl = document.querySelector<HTMLAudioElement>('audio[src="/audio/daily_digest.mp3"]');
-    if (!audioEl) {
-      audioEl = new Audio("/audio/daily_digest.mp3");
-      audioEl.id = "global-daily-circuit-audio";
-      document.body.appendChild(audioEl);
-    }
-
-    if (isPlayingAudio) {
-      audioEl.pause();
-      setIsPlayingAudio(false);
+  // Section Scrolling
+  const scrollToSection = (id: string, sectionKey: string) => {
+    setActiveSection(sectionKey);
+    if (viewMode !== "miranda") {
+      onViewChange("miranda");
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      }, 150);
     } else {
-      audioEl.play().then(() => setIsPlayingAudio(true)).catch(console.error);
-      audioEl.onended = () => setIsPlayingAudio(false);
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
+  // 60-Second Audio Digest Playback with Live Equalizer
+  const togglePlayAudio = () => {
+    if (isPlayingAudio) {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      setIsPlayingAudio(false);
+    } else {
+      setIsPlayingAudio(true);
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(
+          "Welcome to The Daily Circuit. Sixty-second daily brief, Edition 143. Today's headline: Beam MoE sparse architecture achieves breakthrough inference speed with 96.8 percent noise reduction. All repositories and model weights verified."
+        );
+        utterance.rate = 1.05;
+        utterance.pitch = 0.98;
+        utterance.onend = () => setIsPlayingAudio(false);
+        utterance.onerror = () => setIsPlayingAudio(false);
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  };
+
+  // Search input handler: Jump to matching section on Enter
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return;
+
+    if (q.includes("model") || q.includes("compute") || q.includes("sparse")) {
+      scrollToSection("page-02", "models");
+    } else if (q.includes("repo") || q.includes("bounty") || q.includes("kernel")) {
+      scrollToSection("page-04", "repos");
+    } else if (q.includes("home") || q.includes("garden")) {
+      scrollToSection("home-stage", "home");
+    } else {
+      scrollToSection("page-01", "front");
+    }
+    setNotchState("idle");
+  };
+
   return (
-    <header className="fixed top-0 left-1/2 -translate-x-1/2 z-50 select-none font-mono flex flex-col items-center pointer-events-auto">
-      {/* Container morphing between Solid Mac Notch & Liquid Glass Capsule */}
-      <nav
-        onClick={() => {
-          if (!isExpanded) setManualExpanded(true);
-        }}
-        className={`relative transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isExpanded
-            ? "w-[94vw] max-w-[890px] mt-2.5 px-3.5 py-2 rounded-full cursor-default"
-            : "w-[180px] sm:w-[200px] h-[34px] px-4 py-0 flex items-center justify-center rounded-b-[18px] rounded-t-none cursor-pointer hover:opacity-95 group"
-        }`}
-        style={{
-          // Solid pure black at start (Mac Notch), Apple Liquid Glass on scroll
-          background: isExpanded ? "rgba(18, 16, 13, 0.78)" : "#000000",
-          backdropFilter: isExpanded ? "blur(28px) saturate(200%)" : "none",
-          WebkitBackdropFilter: isExpanded ? "blur(28px) saturate(200%)" : "none",
-          border: isExpanded ? "1px solid rgba(255, 255, 255, 0.18)" : "none",
-          boxShadow: isExpanded
-            ? "0 20px 48px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(0, 0, 0, 0.6)"
-            : "0 4px 16px rgba(0, 0, 0, 0.6)",
-        }}
-      >
-        {/* Authentic Mac Notch Side Concave Ears (Only visible in Solid Notch mode) */}
-        <div 
-          className={`transition-opacity duration-300 pointer-events-none ${
-            isExpanded ? "opacity-0" : "opacity-100"
-          }`}
-        >
-          {/* Left Concave Ear */}
-          <svg 
-            className="absolute -left-[12px] top-0 w-[12px] h-[12px] fill-black" 
-            viewBox="0 0 12 12"
-          >
-            <path d="M0 0 C 6 0, 12 6, 12 12 L 12 0 Z" />
+    <>
+      {/* Liquid Glass SVG Optical Filter & Dynamic ClipPath */}
+      <svg width="0" height="0" style={{ position: "fixed", pointerEvents: "none" }} aria-hidden="true">
+        <defs>
+          <filter id="liquid-glass-refract" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+            <feImage id="notch-normal-map" result="map" preserveAspectRatio="none" />
+            <feDisplacementMap in="SourceGraphic" in2="map" scale="18" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+          <clipPath id="notch-clip" clipPathUnits="userSpaceOnUse">
+            <path id="notch-clip-path" ref={clipPathRef} d="" />
+          </clipPath>
+        </defs>
+      </svg>
+
+      {/* Dynamic Notch Top Navbar */}
+      <nav id="liquid-notch" ref={notchRef} data-state={activeState} aria-label="Dynamic Notch Navigation">
+        <div className="notch-shell" ref={shellRef} onMouseMove={handleMouseMove}>
+          {/* Optical Liquid Glass Backdrop */}
+          <div className="notch-glass-bg" />
+          <div className="notch-specular" />
+
+          {/* Seamless Rim & Scroll Progress SVG */}
+          <svg className="notch-overlay-svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="notch-rim-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
+                <stop offset="50%" stopColor="rgba(255,255,255,0.12)" />
+                <stop offset="100%" stopColor="rgba(255,255,255,0.45)" />
+              </linearGradient>
+            </defs>
+            <path id="notch-rim-path" ref={rimPathRef} fill="none" stroke="url(#notch-rim-grad)" strokeWidth="1.25" />
+            <path
+              id="notch-progress-path"
+              ref={progressPathRef}
+              fill="none"
+              stroke="rgba(255,255,255,0.9)"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
           </svg>
 
-          {/* Right Concave Ear */}
-          <svg 
-            className="absolute -right-[12px] top-0 w-[12px] h-[12px] fill-black" 
-            viewBox="0 0 12 12"
-          >
-            <path d="M12 0 C 6 0, 0 6, 0 12 L 0 0 Z" />
-          </svg>
-        </div>
-
-        {/* Specular Liquid Sheen Sweep (Active in Liquid Glass expanded mode) */}
-        {isExpanded && (
-          <div 
-            className="absolute inset-0 rounded-full pointer-events-none opacity-20 overflow-hidden"
-            style={{
-              background: "linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.4) 50%, transparent 80%)",
-              backgroundSize: "200% 100%",
-              animation: "liquidSheen 8s infinite ease-in-out",
-            }}
-          />
-        )}
-
-        {/* ======================================================== */}
-        {/* STATE A: SOLID MAC NOTCH (Exact look of the user's image) */}
-        {/* ======================================================== */}
-        {!isExpanded ? (
-          <div className="w-full flex items-center justify-center text-white tracking-normal animate-fadeIn">
-            <span className="text-[13px] font-sans font-medium text-white/95 select-none text-center">
-              {currentTime || "5:34"}
-            </span>
-          </div>
-        ) : (
-          /* ======================================================== */
-          /* STATE B: APPLE LIQUID GLASS EXPANDED CAPSULE NAVBAR       */
-          /* ======================================================== */
-          <div className="flex items-center justify-between w-full animate-fadeIn transition-opacity duration-300">
-            {/* Left Section: Brand & 24H Live Telemetry */}
-            <div className="flex items-center gap-2.5 pl-1.5">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-md border border-amber-300/40">
-                <span className="font-serif font-black text-[10px] text-neutral-950">DC</span>
-              </div>
-
-              <div className="hidden sm:flex flex-col text-left leading-none">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="text-[10px] font-bold text-neutral-200 tracking-wider">
-                    {currentTime ? `${currentTime} IST` : "06:00 IST"}
-                  </span>
-                </div>
-                <span className="text-[7.5px] uppercase tracking-widest text-neutral-400 mt-0.5">
-                  EDITION NO. 1,428
-                </span>
-              </div>
-            </div>
-
-            {/* Center Section: View Mode Liquid Switcher */}
-            <div 
-              className="flex items-center gap-1 p-1 rounded-full border border-white/10"
-              style={{ background: "rgba(0, 0, 0, 0.45)" }}
-            >
+          {/* Primary Notch Bar Content */}
+          <div className="notch-content">
+            <div className="notch-top-row">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewChange("3d");
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
-                  viewMode === "3d"
-                    ? "bg-[#c83e2b] text-white shadow-[0_2px_12px_rgba(200,62,43,0.5)] border border-red-400/30"
-                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-                title="3D tactile 8-page broadsheet with realistic 3D page flips"
+                type="button"
+                onClick={() => scrollToSection("home-stage", "home")}
+                className="notch-brand cursor-pointer bg-transparent border-0 p-0 text-left"
               >
-                <Sparkles size={11} className={viewMode === "3d" ? "text-amber-300" : ""} />
-                <span>3D Paper</span>
+                <span className="notch-dot" />
+                <span>CIRCUIT</span>
               </button>
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewChange("miranda");
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
-                  viewMode === "miranda"
-                    ? "bg-[#c83e2b] text-white shadow-[0_2px_12px_rgba(200,62,43,0.5)] border border-red-400/30"
-                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-                title="Awwwards-style Miranda continuous editorial broadsheet"
-              >
-                <Layers size={11} className={viewMode === "miranda" ? "text-amber-300" : ""} />
-                <span>Miranda Editorial</span>
-              </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (viewMode !== "miranda") {
-                    onViewChange("miranda");
-                    setTimeout(() => {
-                      const el = document.getElementById("home-stage");
-                      el?.scrollIntoView({ behavior: "smooth" });
-                    }, 120);
-                  } else {
-                    const el = document.getElementById("home-stage");
-                    el?.scrollIntoView({ behavior: "smooth" });
-                  }
-                }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-neutral-300 hover:text-white hover:bg-white/10 transition-all duration-200"
-                title="Scroll to full-screen Home Garden space"
-              >
-                <Compass size={11} className="text-emerald-400" />
-                <span className="hidden sm:inline">Home Space</span>
-              </button>
-            </div>
-
-            {/* Right Section: 60s Voice Brief, Reading Progress & Collapse Toggle */}
-            <div className="flex items-center gap-1.5 pr-1">
-              {/* Quick Voice Broadcast Pill */}
-              <button
-                onClick={toggleAudio}
-                onMouseEnter={() => setIsAudioHovered(true)}
-                onMouseLeave={() => setIsAudioHovered(false)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9.5px] font-bold border transition-all duration-200 ${
-                  isPlayingAudio
-                    ? "bg-emerald-950/80 border-emerald-500 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
-                    : "bg-white/5 hover:bg-white/10 border-white/15 text-neutral-300 hover:text-amber-400"
-                }`}
-                title="Play / Pause 60-second synthesized audio digest"
-              >
-                {isPlayingAudio ? (
-                  <>
-                    <VolumeX size={11} className="text-emerald-400 animate-pulse" />
-                    <span className="hidden md:inline">Playing</span>
-                  </>
-                ) : (
-                  <>
-                    <Volume2 size={11} className={isAudioHovered ? "text-amber-400" : "text-neutral-400"} />
-                    <span className="hidden md:inline">60s Voice</span>
-                  </>
-                )}
-              </button>
-
-              {/* Reading Depth Progress Badge */}
-              {viewMode === "miranda" && (
-                <div 
-                  className="hidden md:flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-bold text-neutral-300"
-                  title="Continuous broadsheet reading completion percentage"
+              <div className="notch-links">
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("page-01", "front")}
+                  className={`notch-link cursor-pointer ${activeSection === "front" ? "active" : ""}`}
                 >
-                  <Compass size={10} className="text-amber-400" />
-                  <span>{scrollProgress}% Read</span>
-                </div>
-              )}
+                  Front
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("page-02", "models")}
+                  className={`notch-link cursor-pointer ${activeSection === "models" ? "active" : ""}`}
+                >
+                  Models
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("page-04", "repos")}
+                  className={`notch-link cursor-pointer ${activeSection === "repos" ? "active" : ""}`}
+                >
+                  Repos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewChange(viewMode === "3d" ? "miranda" : "3d")}
+                  className={`notch-link cursor-pointer ${viewMode === "3d" ? "active" : ""}`}
+                  title="Toggle 3D Tactile Broadsheet / Miranda Reader"
+                >
+                  {viewMode === "3d" ? "3D Paper" : "3D Mode"}
+                </button>
+              </div>
 
-              {/* Collapse to Solid Mac Notch Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setManualExpanded(false);
-                }}
-                className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/15 flex items-center justify-center text-neutral-400 hover:text-amber-300 transition-all duration-200"
-                title="Collapse into solid Mac Notch"
-              >
-                <ChevronUp size={13} />
-              </button>
+              <div className="notch-actions">
+                <button
+                  type="button"
+                  onClick={() => setNotchState("search")}
+                  className={`notch-btn cursor-pointer ${activeState === "search" ? "active" : ""}`}
+                  aria-label="Search"
+                >
+                  ⌘K
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNotchState("audio")}
+                  className={`notch-btn cursor-pointer ${activeState === "audio" ? "active" : ""}`}
+                  aria-label="Audio Brief"
+                >
+                  {isPlayingAudio ? "❚❚ 60s" : "60s"}
+                </button>
+              </div>
+            </div>
+
+            {/* Expanded Search State Panel */}
+            <div className="notch-panel" data-panel="search">
+              <form onSubmit={handleSearchSubmit}>
+                <input
+                  type="text"
+                  id="notch-search-input"
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search issues, models, repos..."
+                  autoComplete="off"
+                />
+              </form>
+              <div className="notch-hints">
+                <span>Press Enter to Navigate</span>
+                <span>ESC Close</span>
+              </div>
+            </div>
+
+            {/* Expanded Audio State Panel */}
+            <div className="notch-panel" data-panel="audio">
+              <div className="notch-audio-row">
+                <button type="button" id="notch-play-btn" onClick={togglePlayAudio} className="notch-play">
+                  {isPlayingAudio ? "❚❚" : "▶"}
+                </button>
+                <div className="notch-audio-meta">
+                  <strong>60-Second Daily Brief</strong>
+                  <span>Issue #143 · AI &amp; Systems</span>
+                </div>
+                <div className={`notch-eq ${isPlayingAudio ? "playing" : ""}`} id="notch-eq">
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </div>
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </nav>
 
       <style>{`
-        @keyframes liquidSheen {
-          0% { background-position: -200% 0; }
-          50% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
+        #liquid-notch {
+          position: fixed;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 9999;
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif;
+          color: #fff;
+          user-select: none;
+          pointer-events: none;
         }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: scale(0.97); }
-          to { opacity: 1; transform: scale(1); }
+
+        .notch-shell {
+          position: relative;
+          pointer-events: auto;
+          filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.45));
         }
-        .animate-fadeIn {
-          animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+        .notch-glass-bg {
+          position: absolute;
+          inset: 0;
+          clip-path: url(#notch-clip);
+          background: linear-gradient(
+            180deg,
+            rgba(22, 22, 26, 0.75) 0%,
+            rgba(16, 16, 20, 0.60) 100%
+          );
+          backdrop-filter: url(#liquid-glass-refract) blur(24px) saturate(190%);
+          -webkit-backdrop-filter: blur(24px) saturate(190%);
+          box-shadow:
+            inset 0 -1px 1px rgba(255, 255, 255, 0.28),
+            inset 0 -12px 24px rgba(255, 255, 255, 0.05);
+        }
+
+        .notch-specular {
+          position: absolute;
+          inset: 0;
+          clip-path: url(#notch-clip);
+          pointer-events: none;
+          background: radial-gradient(
+            180px circle at var(--mx, 50%) var(--my, 20%),
+            rgba(255, 255, 255, 0.22),
+            transparent 65%
+          );
+          mix-blend-mode: screen;
+        }
+
+        .notch-overlay-svg {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          overflow: visible;
+        }
+
+        .notch-content {
+          position: relative;
+          z-index: 2;
+          padding: 0 32px; /* Clears the 22px concave ears on each side */
+          box-sizing: border-box;
+        }
+
+        .notch-top-row {
+          height: 46px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .notch-brand {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          color: #fff;
+          text-decoration: none;
+        }
+
+        .notch-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #ff453a;
+          box-shadow: 0 0 10px #ff453a;
+        }
+
+        .notch-links {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .notch-link {
+          padding: 5px 11px;
+          border-radius: 999px;
+          font-size: 12.5px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.72);
+          text-decoration: none;
+          background: transparent;
+          border: none;
+          transition: color 0.2s ease, background 0.2s ease;
+        }
+
+        .notch-link:hover,
+        .notch-link.active {
+          color: #fff;
+          background: rgba(255, 255, 255, 0.12);
+        }
+
+        .notch-actions {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .notch-btn {
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          background: rgba(255, 255, 255, 0.08);
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 11px;
+          font-weight: 600;
+          padding: 4px 9px;
+          border-radius: 999px;
+          cursor: pointer;
+          transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .notch-btn:hover,
+        .notch-btn.active {
+          background: rgba(255, 255, 255, 0.22);
+          border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .notch-panel {
+          display: none;
+          padding: 8px 0 16px;
+          opacity: 0;
+          transform: translateY(-6px);
+          transition: opacity 0.22s ease, transform 0.22s ease;
+        }
+
+        #liquid-notch[data-state="search"] .notch-panel[data-panel="search"],
+        #liquid-notch[data-state="audio"] .notch-panel[data-panel="audio"] {
+          display: block;
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        #notch-search-input {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 10px 14px;
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.07);
+          color: #fff;
+          font-size: 13.5px;
+          outline: none;
+        }
+
+        #notch-search-input::placeholder {
+          color: rgba(255, 255, 255, 0.45);
+        }
+
+        .notch-hints {
+          margin-top: 8px;
+          display: flex;
+          justify-content: space-between;
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.45);
+        }
+
+        .notch-audio-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 8px 12px;
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.07);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .notch-play {
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          border: none;
+          background: #fff;
+          color: #000;
+          font-size: 12px;
+          cursor: pointer;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.15s ease;
+        }
+
+        .notch-play:hover {
+          transform: scale(1.06);
+        }
+
+        .notch-audio-meta {
+          display: flex;
+          flex-direction: column;
+          font-size: 12px;
+          flex: 1;
+          text-align: left;
+        }
+
+        .notch-audio-meta span {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.55);
+        }
+
+        .notch-eq {
+          display: flex;
+          align-items: flex-end;
+          gap: 3px;
+          height: 18px;
+        }
+
+        .notch-eq i {
+          display: block;
+          width: 3px;
+          height: 5px;
+          border-radius: 2px;
+          background: #fff;
+          transition: height 0.15s ease;
+        }
+
+        .notch-eq.playing i {
+          animation: notchEq 0.7s ease-in-out infinite alternate;
+        }
+
+        .notch-eq.playing i:nth-child(2) { animation-delay: 0.15s; }
+        .notch-eq.playing i:nth-child(3) { animation-delay: 0.3s; }
+        .notch-eq.playing i:nth-child(4) { animation-delay: 0.1s; }
+        .notch-eq.playing i:nth-child(5) { animation-delay: 0.25s; }
+
+        @keyframes notchEq {
+          from { height: 4px; opacity: 0.5; }
+          to { height: 18px; opacity: 1; }
         }
       `}</style>
-    </header>
+    </>
   );
 }
