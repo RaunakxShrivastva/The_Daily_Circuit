@@ -11,7 +11,7 @@ interface WaxSealManuscriptUnrollProps {
 export function WaxSealManuscriptUnroll({
   scrollProgress,
   onBreakSeal,
-  maxRollTravel = 740,
+  maxRollTravel = 2100,
 }: WaxSealManuscriptUnrollProps) {
   const [hasSparked, setHasSparked] = useState(false);
   const p = Math.min(1, Math.max(0, scrollProgress));
@@ -21,8 +21,8 @@ export function WaxSealManuscriptUnroll({
   const tension = Math.min(1, p / 0.08);
   const strainVibration = p > 0.02 && p < 0.12 ? Math.sin(p * 80) * 1.8 * tension : 0;
 
-  // Crack progress (0 to 1 as p goes from 0.06 to 0.26)
-  const crackProgress = Math.min(1, Math.max(0, (p - 0.06) / 0.20));
+  // Crack progress (0 to 1 as p goes from 0.06 to 0.24)
+  const crackProgress = Math.min(1, Math.max(0, (p - 0.06) / 0.18));
 
   // Trigger confetti sparks once when crack opens past 40%
   useEffect(() => {
@@ -61,22 +61,23 @@ export function WaxSealManuscriptUnroll({
     onBreakSeal();
   };
 
-  // Phase 2: Cylinder Roll-Down (p: 0.22 to 0.96)
-  const unrollRatio = Math.min(1, Math.max(0, (p - 0.22) / 0.74));
+  // Phase 2: Cylinder Roll-Down (p: 0.20 to 0.96)
+  // Rolls dynamically across the full length down to the bottom
+  const unrollRatio = Math.min(1, Math.max(0, (p - 0.20) / 0.78));
 
   // Current Y position of the rolling cylinder
   const cylinderY = unrollRatio * maxRollTravel;
 
   // Rotation of cylinder (spins physically as it rolls down)
-  const cylinderRotation = unrollRatio * 720;
+  const cylinderRotation = unrollRatio * 1800;
 
   // Direct scrubbed separation of seal halves (in pixels and degrees)
   const sealSplitX = crackProgress * 110;
   const sealRotate = crackProgress * 28;
   const sealOpacity = Math.max(0, 1 - Math.min(1, p / 0.32));
 
-  // Cylinder visibility: fades out only when fully unrolled at the end
-  const cylinderOpacity = unrollRatio >= 0.98 ? Math.max(0, (1 - unrollRatio) / 0.02) : 1;
+  // Cylinder visibility: smoothly dissolves out as it reaches the bottom end
+  const cylinderOpacity = unrollRatio >= 0.94 ? Math.max(0, (1 - unrollRatio) / 0.06) : 1;
 
   return (
     <div 

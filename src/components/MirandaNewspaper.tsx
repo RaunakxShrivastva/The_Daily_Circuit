@@ -199,8 +199,25 @@ export function MirandaNewspaper() {
   const [paperScale, setPaperScale] = useState(0.96);
   const [paperOpacity, setPaperOpacity] = useState(0.7);
   const [unrollProgress, setUnrollProgress] = useState(0);
+  const [maxRollTravel, setMaxRollTravel] = useState(2100);
 
   const [pipelineEdition, setPipelineEdition] = useState<any>(null);
+
+  useEffect(() => {
+    const calcMaxTravel = () => {
+      const p1El = document.getElementById('page-01');
+      if (p1El) {
+        // Roll all the way through the end of the front page (Page 1) down to the bottom divider
+        const travel = p1El.offsetTop + p1El.offsetHeight + 80;
+        setMaxRollTravel(Math.max(travel, 2000));
+      } else {
+        setMaxRollTravel(Math.max((window.innerHeight || 900) * 1.8, 2000));
+      }
+    };
+    calcMaxTravel();
+    window.addEventListener('resize', calcMaxTravel);
+    return () => window.removeEventListener('resize', calcMaxTravel);
+  }, []);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -232,10 +249,10 @@ export function MirandaNewspaper() {
       setPaperScale(0.97 + progress * 0.03);
       setPaperOpacity(Math.min(1, progress * 1.5));
 
-      // Second-Page Scroll Runway: Unroll only begins when user scrolls into the second page
-      // Starts at homeHeight * 0.45 (~400px) and smoothly unrolls over 850px of scroll
+      // Second-Page Scroll Runway: Unroll begins as second page enters viewport
+      // Starts at homeHeight * 0.45 (~400px) and smoothly unrolls all the way to the end over 1050px
       const scrollStart = homeHeight * 0.45;
-      const scrollDistance = 880;
+      const scrollDistance = 1050;
       targetUnroll = Math.min(1, Math.max(0, (scrollY - scrollStart) / scrollDistance));
 
       const scrollPos = scrollY + 200;
@@ -411,8 +428,7 @@ export function MirandaNewspaper() {
     : wireStories.filter(s => s.kicker.toLowerCase().includes(filterTag.toLowerCase()) || s.tags.some(t => t.toLowerCase().includes(filterTag.toLowerCase())));
 
   // Progressive 3D Manuscript Unroll Calculations (Synchronized with Wax Seal crack)
-  const maxRollTravel = 740;
-  const unrollRatio = Math.min(1, Math.max(0, (unrollProgress - 0.22) / 0.74));
+  const unrollRatio = Math.min(1, Math.max(0, (unrollProgress - 0.20) / 0.78));
   const revealedHeight = Math.round(unrollRatio * maxRollTravel);
 
   return (
@@ -440,7 +456,8 @@ export function MirandaNewspaper() {
       {/* Top Full-Screen Home Page Stage with Botanical Impressionist Garden Background */}
       <HomePageStage 
         onScrollToNewspaper={() => {
-          window.scrollTo({ top: 1520, behavior: 'smooth' });
+          const homeHeight = window.innerHeight || 850;
+          window.scrollTo({ top: homeHeight * 0.45 + 1650, behavior: 'smooth' });
         }} 
       />
 
@@ -479,7 +496,8 @@ export function MirandaNewspaper() {
           scrollProgress={unrollProgress}
           maxRollTravel={maxRollTravel}
           onBreakSeal={() => {
-            window.scrollTo({ top: 1520, behavior: 'smooth' });
+            const homeHeight = window.innerHeight || 850;
+            window.scrollTo({ top: homeHeight * 0.45 + 1650, behavior: 'smooth' });
           }}
         />
 
@@ -487,7 +505,7 @@ export function MirandaNewspaper() {
         <main 
           className="miranda-sheet transition-all duration-75 will-change-transform"
           style={{
-            clipPath: unrollProgress < 0.98 ? `inset(0 0 calc(100% - ${revealedHeight + 12}px) 0)` : undefined,
+            clipPath: unrollProgress < 0.98 ? `inset(0 0 calc(100% - ${revealedHeight + 24}px) 0)` : undefined,
             filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
             transform: `perspective(1400px) rotateX(${((1 - unrollProgress) * -10).toFixed(2)}deg) scale(${paperScale.toFixed(3)})`,
             transformOrigin: 'top center',
