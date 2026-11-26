@@ -11,6 +11,21 @@ export default function App() {
   const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
   const [introDone, setIntroDone] = useState(false);
 
+  // Always reset and start from the top of the Home page on refresh/reload
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, []);
+
+  const handleViewChange = useCallback((mode: "3d" | "miranda") => {
+    setViewMode(mode);
+    if (mode === "miranda") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, []);
+
   const handleIntroComplete = useCallback(() => {
     setIntroDone(true);
   }, []);
@@ -71,7 +86,7 @@ export default function App() {
       {/* Dynamic Mac Notch / Apple Liquid Glass Floating Capsule Navbar */}
       <LiquidGlassNavbar 
         viewMode={viewMode} 
-        onViewChange={setViewMode} 
+        onViewChange={handleViewChange} 
         startExpandedTrigger={introDone}
       />
 

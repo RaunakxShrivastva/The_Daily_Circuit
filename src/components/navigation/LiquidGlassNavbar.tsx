@@ -252,10 +252,18 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     if (viewMode !== "miranda") {
       onViewChange("miranda");
       setTimeout(() => {
-        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-      }, 150);
+        if (id === "home-stage" || id === "home") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
     } else {
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      if (id === "home-stage" || id === "home") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      }
     }
   };
 

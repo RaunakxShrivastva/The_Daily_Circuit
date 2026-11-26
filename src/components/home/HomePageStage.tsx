@@ -20,6 +20,18 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
     return () => window.removeEventListener("mousemove", handleMove);
   }, []);
 
+  // Ensure all Home stage elements are immediately visible when returning from 3D mode
+  useEffect(() => {
+    const targets = document.querySelectorAll<HTMLElement>(".assemble-target");
+    targets.forEach((el) => {
+      el.classList.add("assembled");
+    });
+    const titleEl = document.getElementById("home-title-text");
+    if (titleEl && (!titleEl.textContent || titleEl.textContent.trim() === "")) {
+      titleEl.textContent = "THE DAILY CIRCUIT";
+    }
+  }, []);
+
   return (
     <section 
       id="home-stage"
