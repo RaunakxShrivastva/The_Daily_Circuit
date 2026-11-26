@@ -328,6 +328,9 @@ export function CursorAssemblyEngine({ active = false }: CursorAssemblyEnginePro
     EDITORS.forEach((e) => {
       showCursor(e.id, false);
     });
+
+    // Notify mascot that initial home assembly has finished
+    window.dispatchEvent(new CustomEvent("daily-circuit:assembly-complete"));
   }, [flyCursor, showCursor]);
 
   const skipAssembly = useCallback(async () => {
@@ -356,6 +359,9 @@ export function CursorAssemblyEngine({ active = false }: CursorAssemblyEnginePro
     });
 
     setIsAssembling(false);
+
+    // Notify mascot that assembly was completed / skipped
+    window.dispatchEvent(new CustomEvent("daily-circuit:assembly-complete"));
 
     const w = window.innerWidth;
     const h = window.innerHeight;

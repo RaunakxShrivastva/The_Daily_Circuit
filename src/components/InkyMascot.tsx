@@ -493,6 +493,90 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
     return () => window.removeEventListener("daily-circuit:stamp", onStamp);
   }, [triggerCelebration]);
 
+  // Starting introduction after 5 AI Cursors complete assembling the Home Page
+  useEffect(() => {
+    const onAssemblyComplete = () => {
+      setTimeout(() => {
+        const p = phys.current;
+        p.vy = -8.5;
+        p.state = "JUMPING";
+        p.scaleX = 0.85;
+        p.scaleY = 1.25;
+        playChirp(480, 840, 0.12, "triangle", 0.08);
+        setTimeout(() => {
+          say("Beep boop! 🗞️ I'm Inky, your living Press-Bot mascot! I audit hype, decode architectures, and perch on cards. Double-click me anytime for commands or help!", 7500);
+        }, 350);
+      }, 600);
+    };
+
+    window.addEventListener("daily-circuit:assembly-complete", onAssemblyComplete);
+    return () => window.removeEventListener("daily-circuit:assembly-complete", onAssemblyComplete);
+  }, [playChirp, say]);
+
+  // Feature 1: Context-Aware Reading (Dwell detection on sections)
+  useEffect(() => {
+    let dwellTimer: ReturnType<typeof setTimeout> | null = null;
+    const commentedCards = new Set<string>();
+
+    const checkDwell = () => {
+      if (askOpenRef.current) return;
+      const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-perch="true"]'));
+      const activeCard = cards.find((c) => {
+        const r = c.getBoundingClientRect();
+        return r.top >= 80 && r.top <= window.innerHeight * 0.55;
+      });
+
+      if (activeCard) {
+        const note = activeCard.getAttribute("data-mascot-note");
+        const cardId = activeCard.id || note?.slice(0, 24) || "";
+        if (note && cardId && !commentedCards.has(cardId)) {
+          commentedCards.add(cardId);
+          const p = phys.current;
+          if (p.state !== "DRAGGED" && p.state !== "SLEEPING" && p.state !== "WINDSWEPT") {
+            setMascotState("INSPECTING");
+            playChirp(540, 720, 0.08);
+            say(`💡 Inky's Takeaway: ${note}`, 5200);
+          }
+        }
+      }
+    };
+
+    const onScrollDwell = () => {
+      if (dwellTimer) clearTimeout(dwellTimer);
+      dwellTimer = setTimeout(checkDwell, 3400);
+    };
+
+    window.addEventListener("scroll", onScrollDwell, { passive: true });
+    dwellTimer = setTimeout(checkDwell, 4000);
+
+    return () => {
+      if (dwellTimer) clearTimeout(dwellTimer);
+      window.removeEventListener("scroll", onScrollDwell);
+    };
+  }, [playChirp, say, setMascotState]);
+
+  // Feature 2: Text Selection Explainer
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const handleMouseUp = () => {
+      if (askOpenRef.current) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        const sel = window.getSelection()?.toString().trim();
+        if (sel && sel.length >= 3 && sel.length <= 60 && !sel.includes("\n")) {
+          playChirp(620, 820, 0.06);
+          say(`🔍 Want me to decode "${sel.length > 25 ? sel.slice(0, 22) + "..." : sel}"? Double-click me to ask Botpress AI!`, 4800);
+        }
+      }, 400);
+    };
+
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [playChirp, say]);
+
   // 6. Context-aware hover inspection
   useEffect(() => {
     const handlePointerOver = (e: PointerEvent) => {
@@ -550,7 +634,7 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
         p.lastActivityTime = Date.now();
         if (p.state !== "WINDSWEPT") {
           setMascotState("WINDSWEPT");
-          say("WHOA—SLOW DOWN! MY INK IS BLOWING AWAY!", 2000);
+          say("Whoa, speed reader! Slow down—The Daily Circuit is finite, zero doomscroll. Take your time with the lead wire!", 3200);
           playChirp(780, 420, 0.1, "sine", 0.045);
         } else {
           p.stateTimer = Date.now();
@@ -1004,10 +1088,36 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
     }
   };
 
+  // Dynamic Smart Chips based on current viewport section
+  const getSmartChips = () => {
+    const pages = [
+      { id: "page-08", chips: [{ label: "📬 Subscribe", query: "how to subscribe to daily telegraph" }, { label: "🎯 Stamp Edition", query: "stamp" }, { label: "🗞️ Summary", query: "summarize today's full edition" }] },
+      { id: "page-04", chips: [{ label: "💰 Top Bounty", query: "what is the highest paying open source bounty today?" }, { label: "💼 Kernel Roles", query: "list high signal engineering roles" }, { label: "🦀 Rust Schema", query: "explain Ollama Rust JSON schema bounty" }] },
+      { id: "page-03", chips: [{ label: "🚨 Redis RCA", query: "explain the Redis cluster outage root cause" }, { label: "🛠️ Outage Patch", query: "how was the Redis rate limiter patched?" }, { label: "⚠️ CUDA OOM", query: "how to fix vLLM CUDA OOM during prefill?" }] },
+      { id: "page-02", chips: [{ label: "🔥 Cheapest GPU", query: "what is the cheapest GPU hourly rate today?" }, { label: "📊 Sonnet vs GPT-4o", query: "compare Claude 3.5 Sonnet and GPT-4o" }, { label: "⚡ Token Cost", query: "which model has the lowest token cost?" }] },
+      { id: "page-01", chips: [{ label: "⚡ Lead Breakdown", query: "summarize Beam MoE architecture" }, { label: "🤔 Is Beam Overhyped?", query: "hype check on Beam 501B" }, { label: "💻 Coding Agents", query: "explain multi-turn coding agents" }] },
+    ];
+    for (const p of pages) {
+      const el = document.getElementById(p.id);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        if (r.top <= window.innerHeight * 0.65 && r.bottom >= window.innerHeight * 0.15) {
+          return p.chips;
+        }
+      }
+    }
+    return [
+      { label: "⚡ 60s Lead Wire", query: "summarize lead headline" },
+      { label: "🤖 Who is Inky?", query: "who is Inky the mascot?" },
+      { label: "🤸 Backflip", query: "backflip" },
+    ];
+  };
+
   // 10. Command handler
-  const handleAskSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = query.trim().toLowerCase();
+  const handleAskSubmit = (e?: React.FormEvent, customQuery?: string) => {
+    if (e) e.preventDefault();
+    const targetQuery = customQuery !== undefined ? customQuery : query;
+    const q = targetQuery.trim().toLowerCase();
     setQuery("");
     closeAsk();
     phys.current.lastActivityTime = Date.now();
@@ -1059,7 +1169,7 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
 
     if (botpress?.open) {
       botpress.open();
-      if (botpress.setDraft) botpress.setDraft(query.trim());
+      if (botpress.setDraft) botpress.setDraft(targetQuery.trim());
       botpress.focus?.();
       return say("Connecting to Inky's Botpress AI brain...", 3200);
     }
@@ -1528,6 +1638,31 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
               outline: "none",
             }}
           />
+
+          {/* Dynamic Page Smart Chips */}
+          <div style={{ marginTop: 7, display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {getSmartChips().map((chip, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleAskSubmit(undefined, chip.query)}
+                style={{
+                  background: "rgba(255, 255, 255, 0.08)",
+                  border: "1px solid rgba(255, 255, 255, 0.16)",
+                  color: "#f4f4f5",
+                  borderRadius: 6,
+                  padding: "2px 7px",
+                  fontSize: 10,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "background 0.15s ease",
+                }}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
           <div
             style={{
               marginTop: 9,
