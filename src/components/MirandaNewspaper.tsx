@@ -31,6 +31,7 @@ import {
   Code2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { MacbookScrollDemo } from './MacbookScrollDemo';
 import type { Story, Edition } from '../data/types';
 import type { GithubRepo, LiveEditionData } from '../lib/api';
 import { fetchLiveEdition, liveDataToStories } from '../lib/api';
@@ -1394,6 +1395,13 @@ export function MirandaNewspaper() {
               </form>
             </div>
           </div>
+        </section>
+
+        {/* ========================================================
+            MACBOOK SCROLL ANIMATION (ACETERNITY UI)
+            ======================================================== */}
+        <section id="macbook-showcase" className="w-full my-8 overflow-hidden rounded-2xl border border-neutral-800/80 shadow-2xl">
+          <MacbookScrollDemo />
         </section>
 
         {/* Colophon & Footer */}
