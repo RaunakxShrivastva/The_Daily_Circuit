@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { askGroq } from "../lib/groq";
 
 export type MascotTheme = "obsidian" | "ink" | "riso";
 
@@ -248,6 +249,16 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
         setSpeech(null);
       }, durationMs);
     }
+  }, []);
+
+  const getClampedPopupCoords = useCallback((x: number, y: number) => {
+    const maxX = typeof window !== "undefined" ? window.innerWidth - 140 : 200;
+    const clampedX = Math.max(140, Math.min(maxX, x));
+    const isNearTop = y < 190;
+    const clampedY = isNearTop
+      ? Math.min(typeof window !== "undefined" ? window.innerHeight - 100 : 500, y + 16)
+      : Math.max(16, y - MASCOT_H - 85);
+    return { x: clampedX, y: clampedY };
   }, []);
 
   const setMascotState = useCallback((nextState: MascotState) => {
@@ -913,13 +924,13 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
       }
 
       // Popups positioning
-      const popupX = Math.max(140, Math.min(window.innerWidth - 140, p.x));
+      const { x: popupX, y: popupY } = getClampedPopupCoords(p.x, p.y);
       if (speechBubbleRef.current) {
-        speechBubbleRef.current.style.top = `${Math.max(16, p.y - MASCOT_H - 90)}px`;
+        speechBubbleRef.current.style.top = `${popupY}px`;
         speechBubbleRef.current.style.left = `${popupX}px`;
       }
       if (commandDeskRef.current) {
-        commandDeskRef.current.style.top = `${Math.max(16, p.y - MASCOT_H - 90)}px`;
+        commandDeskRef.current.style.top = `${popupY}px`;
         commandDeskRef.current.style.left = `${popupX}px`;
       }
 
@@ -1158,23 +1169,37 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
       return triggerCelebration();
     }
 
-    // Connect with Botpress Webchat AI for all questions
-    const botpress = (window as unknown as {
-      botpressWebChat?: {
-        open?: () => void;
-        setDraft?: (val: string) => void;
-        focus?: () => void;
-      };
-    }).botpressWebChat;
+    // Fast Groq LPU AI response + Botpress bridge
+    say("Thinking with Groq LPU...", 1500);
+    playChirp(520, 780, 0.08);
 
-    if (botpress?.open) {
-      botpress.open();
-      if (botpress.setDraft) botpress.setDraft(targetQuery.trim());
-      botpress.focus?.();
-      return say("Connecting to Inky's Botpress AI brain...", 3200);
-    }
-
-    say("Try: summarize, top repo, top model, signal, jump, or backflip.");
+    askGroq(
+      targetQuery,
+      `You are Inky, the witty and brilliant living Press-Bot mascot for The Daily Circuit digital newspaper created by Raunak Shrivastva. 
+The newspaper covers Beam MoE 501B sparse architecture, GPU pricing weather, Redis outage post-mortems, and open silicon telemetry.
+Answer the reader's question directly, accurately, and humorously in 1-2 punchy sentences. Always stay in character as Inky the Press-Bot!`
+    )
+      .then((ans) => {
+        playChirp(680, 920, 0.1, "triangle", 0.08);
+        say(ans, 8500);
+      })
+      .catch((err) => {
+        console.warn("Groq mascot error, opening Botpress console:", err);
+        const botpress = (window as unknown as {
+          botpressWebChat?: {
+            open?: () => void;
+            setDraft?: (val: string) => void;
+            focus?: () => void;
+          };
+        }).botpressWebChat;
+        if (botpress?.open) {
+          botpress.open();
+          if (botpress.setDraft) botpress.setDraft(targetQuery.trim());
+          botpress.focus?.();
+        } else {
+          say("Try: summarize, top repo, top model, signal, jump, or backflip.");
+        }
+      });
   };
 
   const palette = THEMES[theme];
@@ -1556,8 +1581,8 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
           data-inky-ui
           style={{
             position: "fixed",
-            top: Math.max(16, phys.current.y - MASCOT_H - 90),
-            left: Math.max(140, Math.min(typeof window !== "undefined" ? window.innerWidth - 140 : 200, phys.current.x)),
+            top: getClampedPopupCoords(phys.current.x, phys.current.y).y,
+            left: getClampedPopupCoords(phys.current.x, phys.current.y).x,
             transform: "translateX(-50%)",
             zIndex: 9999,
             minWidth: 170,
@@ -1594,8 +1619,8 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
           onSubmit={handleAskSubmit}
           style={{
             position: "fixed",
-            top: Math.max(16, phys.current.y - MASCOT_H - 90),
-            left: Math.max(140, Math.min(typeof window !== "undefined" ? window.innerWidth - 140 : 200, phys.current.x)),
+            top: getClampedPopupCoords(phys.current.x, phys.current.y).y,
+            left: getClampedPopupCoords(phys.current.x, phys.current.y).x,
             transform: "translateX(-50%)",
             zIndex: 9999,
             width: 240,

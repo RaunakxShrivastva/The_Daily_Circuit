@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Story } from "../data/types";
 import { answerQuestion, SUGGESTIONS, type Answer } from "../lib/ask";
+import { askGroq } from "../lib/groq";
 
 /* ------------------------------------------------------------------
    Evidence Desk
@@ -65,24 +66,21 @@ export function Timeline({ story }: { story: Story }) {
 }
 
 /* ------------------------------------------------------------------
-   Ask This Story — Live AI QA with Gemini / LLM support
+   Ask This Story — Live AI QA with Ultra-Fast Groq LPU
    ------------------------------------------------------------------ */
 
 export function AskThisStory({ story }: { story: Story }) {
   const [log, setLog] = useState<Answer[]>([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("tdc_gemini_key") || "");
-  const [showKeyInput, setShowKeyInput] = useState(false);
 
   const ask = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
     setLoading(true);
 
-    if (apiKey) {
-      try {
-        const prompt = `You are the investigative research assistant for the newspaper story titled "${story.headline}".
+    try {
+      const prompt = `You are the investigative research assistant for the newspaper story titled "${story.headline}".
 Context from the story:
 Summary: ${story.standfirst}
 Full Details: ${story.body.join(" ")}
@@ -92,29 +90,17 @@ User question: ${trimmed}
 
 Provide a direct, factual, and concise answer (2-3 sentences max) based strictly on the reporting context above.`;
 
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
-          setLog(l => [...l, {
-            question: trimmed,
-            body: answerText,
-            citations: ["Gemini 1.5 Flash Analysis", ...story.sources.slice(0, 1).map(s => s.title)]
-          }]);
-          setQ("");
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.warn("Gemini call failed, falling back to local heuristic", err);
-      }
+      const answerText = await askGroq(prompt);
+      setLog(l => [...l, {
+        question: trimmed,
+        body: answerText,
+        citations: ["Groq LPU Acceleration", ...story.sources.slice(0, 1).map(s => s.title)]
+      }]);
+      setQ("");
+      setLoading(false);
+      return;
+    } catch (err) {
+      console.warn("Groq call failed, falling back to local heuristic", err);
     }
 
     // Heuristic Fallback
@@ -129,39 +115,13 @@ Provide a direct, factual, and concise answer (2-3 sentences max) based strictly
     <div className="ask">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div className="kicker">Ask this story · AI Assistant</div>
-        <button 
-          onClick={() => setShowKeyInput(!showKeyInput)}
-          style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "var(--blue)", textDecoration: "underline" }}
-        >
-          {apiKey ? "✓ Gemini Key Connected" : "+ Connect Gemini API Key"}
-        </button>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "#10b981", letterSpacing: "0.08em" }}>
+          ⚡ Groq LPU Active
+        </span>
       </div>
 
-      {showKeyInput && (
-        <div style={{ display: "flex", gap: 8, background: "var(--paper-2)", padding: 10, border: "1px solid var(--rule-strong)" }}>
-          <input
-            type="password"
-            placeholder="Paste Google Gemini API Key (optional)"
-            value={apiKey}
-            onChange={(e) => {
-              setApiKey(e.target.value);
-              localStorage.setItem("tdc_gemini_key", e.target.value);
-            }}
-            style={{ flex: 1, padding: "6px 8px", fontSize: 12, fontFamily: "var(--mono)", border: "1px solid var(--rule)" }}
-          />
-          <button 
-            onClick={() => setShowKeyInput(false)}
-            style={{ background: "var(--blue)", color: "var(--paper)", padding: "4px 12px", fontSize: 10, fontFamily: "var(--mono)" }}
-          >
-            Save
-          </button>
-        </div>
-      )}
-
       <div className="ask__note">
-        {apiKey 
-          ? "Powered by live Google Gemini 1.5 Flash · Ask any analytical or contextual question about this story."
-          : "Local Intelligent Synthesis active · Answers generated contextually from this story's investigative reporting and citations."}
+        Powered by Groq ultra-fast AI engine · Ask any analytical or contextual question about this story for instant answers.
       </div>
 
       {log.length > 0 && (
