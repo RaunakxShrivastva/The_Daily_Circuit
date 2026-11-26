@@ -1400,7 +1400,7 @@ export function MirandaNewspaper() {
         {/* ========================================================
             MACBOOK SCROLL ANIMATION (ACETERNITY UI)
             ======================================================== */}
-        <section id="macbook-showcase" className="w-full my-8 overflow-hidden rounded-2xl border border-neutral-800/80 shadow-2xl">
+        <section id="macbook-showcase" className="w-full my-6 bg-transparent overflow-visible">
           <MacbookScrollDemo />
         </section>
 

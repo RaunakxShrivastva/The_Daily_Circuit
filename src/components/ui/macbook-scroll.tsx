@@ -30,11 +30,13 @@ export const MacbookScroll = ({
   showGradient,
   title,
   badge,
+  children,
 }: {
   src?: string;
   showGradient?: boolean;
   title?: string | React.ReactNode;
   badge?: React.ReactNode;
+  children?: React.ReactNode;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -70,19 +72,17 @@ export const MacbookScroll = ({
       ref={ref}
       className="flex min-h-[200vh] shrink-0 scale-[0.35] transform flex-col items-center justify-start py-0 [perspective:800px] sm:scale-50 md:scale-100 md:py-80"
     >
-      <motion.h2
-        style={{
-          translateY: textTransform,
-          opacity: textOpacity,
-        }}
-        className="mb-20 text-center text-3xl font-bold text-neutral-800 dark:text-white"
-      >
-        {title || (
-          <span>
-            This Macbook is built with Tailwindcss. <br /> No kidding.
-          </span>
-        )}
-      </motion.h2>
+      {title ? (
+        <motion.h2
+          style={{
+            translateY: textTransform,
+            opacity: textOpacity,
+          }}
+          className="mb-20 text-center text-3xl font-bold text-neutral-800 dark:text-white"
+        >
+          {title}
+        </motion.h2>
+      ) : null}
       {/* Lid */}
       <Lid
         src={src}
@@ -90,7 +90,9 @@ export const MacbookScroll = ({
         scaleY={scaleY}
         rotate={rotate}
         translate={translate}
-      />
+      >
+        {children}
+      </Lid>
       {/* Base area */}
       <div className="relative -z-10 h-[22rem] w-[32rem] overflow-hidden rounded-2xl bg-gray-200 dark:bg-[#272729]">
         {/* above keyboard bar */}
@@ -125,12 +127,14 @@ export const Lid = ({
   rotate,
   translate,
   src,
+  children,
 }: {
   scaleX: MotionValue<number>;
   scaleY: MotionValue<number>;
   rotate: MotionValue<number>;
   translate: MotionValue<number>;
   src?: string;
+  children?: React.ReactNode;
 }) => {
   return (
     <div className="relative [perspective:800px]">
@@ -162,14 +166,20 @@ export const Lid = ({
           transformStyle: "preserve-3d",
           transformOrigin: "top",
         }}
-        className="absolute inset-0 h-96 w-[32rem] rounded-2xl bg-[#010101] p-2"
+        className="absolute inset-0 h-96 w-[32rem] rounded-2xl bg-[#010101] p-2 shadow-2xl"
       >
-        <div className="absolute inset-0 rounded-lg bg-[#272729]" />
-        <img
-          src={src as string}
-          alt="aceternity logo"
-          className="absolute inset-0 h-full w-full rounded-lg object-cover object-left-top"
-        />
+        <div className="absolute inset-0 rounded-lg bg-[#0c0c10]" />
+        {children ? (
+          <div className="relative h-full w-full rounded-lg overflow-hidden z-10 pointer-events-auto">
+            {children}
+          </div>
+        ) : src ? (
+          <img
+            src={src}
+            alt="screen preview"
+            className="absolute inset-0 h-full w-full rounded-lg object-cover object-left-top"
+          />
+        ) : null}
       </motion.div>
     </div>
   );
