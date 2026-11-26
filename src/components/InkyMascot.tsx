@@ -846,6 +846,7 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
       }
 
       // Render FX Canvas Particles
+      const canvas = fxCanvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext("2d");
         if (ctx) {
