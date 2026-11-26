@@ -134,6 +134,9 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
   const fxCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const speechTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const speechBubbleRef = useRef<HTMLDivElement | null>(null);
+  const commandDeskRef = useRef<HTMLFormElement | null>(null);
+  const lastHoveredRef = useRef<HTMLElement | null>(null);
 
   const MASCOT_W = 68;
   const MASCOT_H = 76;
@@ -492,10 +495,16 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
 
   // 6. Context-aware hover inspection
   useEffect(() => {
-    const handleMouseEnter = (e: MouseEvent) => {
+    const handlePointerOver = (e: PointerEvent) => {
       if (askOpenRef.current) return;
       const target = (e.target as HTMLElement)?.closest('[data-perch="true"]') as HTMLElement | null;
-      if (!target) return;
+      if (!target) {
+        lastHoveredRef.current = null;
+        return;
+      }
+      if (lastHoveredRef.current === target) return;
+      lastHoveredRef.current = target;
+
       const note = target.getAttribute("data-mascot-note");
       if (!note) return;
 
@@ -513,14 +522,9 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
       }
     };
 
-    document.querySelectorAll('[data-perch="true"]').forEach((card) => {
-      card.addEventListener("mouseenter", handleMouseEnter as EventListener);
-    });
-
+    document.addEventListener("pointerover", handlePointerOver);
     return () => {
-      document.querySelectorAll('[data-perch="true"]').forEach((card) => {
-        card.removeEventListener("mouseenter", handleMouseEnter as EventListener);
-      });
+      document.removeEventListener("pointerover", handlePointerOver);
     };
   }, [jumpToElement, playChirp, say, setMascotState]);
 
@@ -566,14 +570,18 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
 
   // 8. 60FPS Animation Loop
   useEffect(() => {
-    const canvas = fxCanvasRef.current;
-    if (canvas) {
+    const handleResize = () => {
+      const canvas = fxCanvasRef.current;
+      if (!canvas) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.floor(window.innerWidth * dpr);
       canvas.height = Math.floor(window.innerHeight * dpr);
       const ctx = canvas.getContext("2d");
       if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
 
     let rafId = 0;
 
@@ -820,6 +828,17 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
         )}) rotate(${(p.tiltDeg + p.spinDeg).toFixed(1)}deg)`;
       }
 
+      // Popups positioning
+      const popupX = Math.max(140, Math.min(window.innerWidth - 140, p.x));
+      if (speechBubbleRef.current) {
+        speechBubbleRef.current.style.top = `${Math.max(16, p.y - MASCOT_H - 90)}px`;
+        speechBubbleRef.current.style.left = `${popupX}px`;
+      }
+      if (commandDeskRef.current) {
+        commandDeskRef.current.style.top = `${Math.max(16, p.y - MASCOT_H - 90)}px`;
+        commandDeskRef.current.style.left = `${popupX}px`;
+      }
+
       // Shadow
       const isAirborne = p.state === "JUMPING" || p.state === "FALLING" || p.state === "DRAGGED";
       if (shadowRef.current) {
@@ -879,7 +898,10 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
     };
 
     rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", handleResize);
+    };
   }, [askOpen, jumpToRandomPerch, landOnSurface, say, setMascotState]);
 
   // 9. Pointer Drag & Toss
@@ -1049,6 +1071,10 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
   return (
     <>
       <style>{`
+        @keyframes inkyBubbleFade {
+          from { opacity: 0; transform: translate(-50%, 6px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
         @keyframes spinSpiral {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -1415,11 +1441,12 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
       {/* Floating Editorial Speech Bubble */}
       {speech && !askOpen && (
         <div
+          ref={speechBubbleRef}
           data-inky-ui
           style={{
             position: "fixed",
-            bottom: 84,
-            left: phys.current.x,
+            top: Math.max(16, phys.current.y - MASCOT_H - 90),
+            left: Math.max(140, Math.min(typeof window !== "undefined" ? window.innerWidth - 140 : 200, phys.current.x)),
             transform: "translateX(-50%)",
             zIndex: 9999,
             minWidth: 170,
@@ -1451,12 +1478,13 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
       {/* Mini Ask & Style Popover (Double-click Inky) */}
       {askOpen && (
         <form
+          ref={commandDeskRef}
           data-inky-ui
           onSubmit={handleAskSubmit}
           style={{
             position: "fixed",
-            bottom: 84,
-            left: phys.current.x,
+            top: Math.max(16, phys.current.y - MASCOT_H - 90),
+            left: Math.max(140, Math.min(typeof window !== "undefined" ? window.innerWidth - 140 : 200, phys.current.x)),
             transform: "translateX(-50%)",
             zIndex: 9999,
             width: 240,
