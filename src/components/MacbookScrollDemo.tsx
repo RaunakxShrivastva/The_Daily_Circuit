@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { MacbookScroll } from "./ui/macbook-scroll";
 import { LiquidGlassScreen } from "./LiquidGlassScreen";
 import { Keyboard } from "./ui/keyboard";
 import { Volume2, Sparkles } from "lucide-react";
@@ -79,19 +80,21 @@ export function MacbookScrollDemo() {
   }, [email]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center py-6 sm:py-8 px-4">
-      {/* 1. Apple Liquid Glass Display Screen (Motion CloudShader background + macOS controls) */}
-      <div className="w-full max-w-3xl min-h-[420px] sm:min-h-[460px] h-auto rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] border border-white/20 relative backdrop-blur-md">
-        <LiquidGlassScreen
-          email={email}
-          setEmail={setEmail}
-          subscribed={subscribed}
-          setSubscribed={setSubscribed}
-        />
+    <div className="w-full flex flex-col items-center bg-transparent overflow-visible">
+      {/* 1. 3D Scrolling MacBook (Lid opens in 3D perspective, Liquid Glass Screen emerges on scroll) */}
+      <div className="w-full overflow-visible flex justify-center">
+        <MacbookScroll showGradient={false}>
+          <LiquidGlassScreen
+            email={email}
+            setEmail={setEmail}
+            subscribed={subscribed}
+            setSubscribed={setSubscribed}
+          />
+        </MacbookScroll>
       </div>
 
-      {/* 2. Sleek Status Strip (No gap, unified bridge) */}
-      <div className="flex items-center justify-between w-full max-w-2xl px-2 mt-4 sm:mt-5 mb-2 text-xs font-mono text-zinc-400">
+      {/* 2. Sleek Status Strip (Docked cleanly below the MacBook) */}
+      <div className="flex items-center justify-between w-full max-w-2xl px-3 -mt-4 sm:-mt-8 mb-2 text-xs font-mono text-zinc-400 relative z-20">
         <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <Volume2 className="w-3.5 h-3.5" />
@@ -103,8 +106,8 @@ export function MacbookScrollDemo() {
         </div>
       </div>
 
-      {/* 3. Aceternity Pure Mechanical Keyboard (Always together on screen with display!) */}
-      <div className="w-full overflow-x-auto py-1 flex flex-col items-center justify-center">
+      {/* 3. Aceternity Pure Mechanical Keyboard (Docked directly at the MacBook base) */}
+      <div className="w-full overflow-x-auto py-1 flex flex-col items-center justify-center relative z-20">
         <div className="min-w-fit px-2">
           <Keyboard
             enableSound={true}
