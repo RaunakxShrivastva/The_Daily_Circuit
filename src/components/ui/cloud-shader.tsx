@@ -299,7 +299,7 @@ export const CloudShader = ({
     ).matches;
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       const w = Math.max(1, Math.floor(width * dpr));
@@ -316,9 +316,13 @@ export const CloudShader = ({
     observer.observe(canvas);
     resize();
 
+    let isVisible = false;
     const start = performance.now();
     const draw = (now: number) => {
-      if (!running) return;
+      if (!running || !isVisible) {
+        frame = 0;
+        return;
+      }
       const p = paramsRef.current;
       const elapsed = reduceMotion ? 0 : ((now - start) / 1000) * p.speed;
       const cloud = parseHex(p.cloudColor);
@@ -334,11 +338,21 @@ export const CloudShader = ({
       frame = requestAnimationFrame(draw);
     };
 
-    frame = requestAnimationFrame(draw);
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible && running && !frame) {
+          frame = requestAnimationFrame(draw);
+        }
+      },
+      { threshold: 0.01 }
+    );
+    io.observe(canvas);
 
     return () => {
       running = false;
-      cancelAnimationFrame(frame);
+      if (frame) cancelAnimationFrame(frame);
+      io.disconnect();
       observer.disconnect();
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);

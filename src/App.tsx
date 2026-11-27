@@ -1,10 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { MirandaNewspaper } from "./components/MirandaNewspaper";
 import { LiquidGlassNavbar } from "./components/navigation/LiquidGlassNavbar";
 import { CinematicIntroOverlay } from "./components/motion/CinematicIntroOverlay";
 import { CursorAssemblyEngine } from "./components/motion/CursorAssemblyEngine";
-import { InkyMascot } from "./components/InkyMascot";
-import { InkyLiquidGlassChat } from "./components/chat/InkyLiquidGlassChat";
+
+const InkyMascot = lazy(() =>
+  import("./components/InkyMascot").then((m) => ({ default: m.InkyMascot }))
+);
+const InkyLiquidGlassChat = lazy(() =>
+  import("./components/chat/InkyLiquidGlassChat").then((m) => ({
+    default: m.InkyLiquidGlassChat,
+  }))
+);
 
 export default function App() {
   const [viewMode, setViewMode] = useState<"3d" | "miranda">(() => {
@@ -15,8 +22,8 @@ export default function App() {
     }
     return "miranda";
   });
-  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
   const [introDone, setIntroDone] = useState(false);
+  const spotlightRef = useRef<HTMLDivElement>(null);
 
   // Always reset and start from the top of the Home page on refresh/reload
   useEffect(() => {
@@ -34,13 +41,32 @@ export default function App() {
     setIntroDone(true);
   }, []);
 
-  // Interactive ambient desk spotlight tracking mouse
+  // Zero-re-render ambient desk spotlight tracking mouse via rAF + direct DOM style
   useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+    let rafId = 0;
+    let latestX = -1000;
+    let latestY = -1000;
+
+    const updateSpotlight = () => {
+      rafId = 0;
+      if (spotlightRef.current) {
+        spotlightRef.current.style.background = `radial-gradient(750px circle at ${latestX}px ${latestY}px, rgba(255, 230, 180, 0.08), transparent 75%)`;
+      }
     };
+
+    const handleMove = (e: MouseEvent) => {
+      latestX = e.clientX;
+      latestY = e.clientY;
+      if (!rafId) {
+        rafId = requestAnimationFrame(updateSpotlight);
+      }
+    };
+
     window.addEventListener("mousemove", handleMove, { passive: true });
-    return () => window.removeEventListener("mousemove", handleMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   return (
@@ -60,46 +86,44 @@ export default function App() {
       {/* 5 Autonomous AI Editors Multiplayer Cursor Assembly Engine */}
       <CursorAssemblyEngine active={introDone} />
 
-      {/* Impressionist Botanical Oil Painting Background - Hidden in 3D Mode for pure editorial focus */}
+      {/* Impressionist Botanical Oil Painting Background - GPU-composited fixed layer without backgroundAttachment:fixed repaint */}
       {viewMode !== "3d" && (
-        <div 
-          className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat transition-opacity duration-500"
+        <div
+          className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat transition-opacity duration-500 will-change-transform"
           style={{
             backgroundImage: "url('/images/main_bg.jpg')",
-            backgroundAttachment: "fixed",
             opacity: 0.88,
           }}
         />
       )}
 
       {/* Soft Vignette Overlay for Depth & High-Contrast Reading */}
-      <div 
+      <div
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
-          background: "radial-gradient(circle at 50% 25%, rgba(13, 11, 9, 0.2) 0%, rgba(13, 11, 9, 0.55) 60%, rgba(13, 11, 9, 0.85) 100%)",
+          background:
+            "radial-gradient(circle at 50% 25%, rgba(13, 11, 9, 0.2) 0%, rgba(13, 11, 9, 0.55) 60%, rgba(13, 11, 9, 0.85) 100%)",
         }}
       />
 
-      {/* Interactive Ambient Desk Lamp (Follows mouse behind paper with warm gold glow) */}
-      <div 
+      {/* Interactive Ambient Desk Lamp (Direct DOM rAF update — zero React re-renders) */}
+      <div
+        ref={spotlightRef}
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
-        style={{
-          background: `radial-gradient(750px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255, 230, 180, 0.08), transparent 75%)`,
-        }}
       />
 
       {/* Dynamic Mac Notch / Apple Liquid Glass Floating Capsule Navbar */}
-      <LiquidGlassNavbar 
-        viewMode={viewMode} 
-        onViewChange={handleViewChange} 
+      <LiquidGlassNavbar
+        viewMode={viewMode}
+        onViewChange={handleViewChange}
         startExpandedTrigger={introDone}
       />
 
-      {/* Autonomous Editorial Inky Mascot with Physics & Perch */}
-      <InkyMascot defaultTheme="obsidian" />
-
-      {/* Apple HIG / macOS Tahoe Liquid Glass Inky Chatbot */}
-      <InkyLiquidGlassChat />
+      {/* Autonomous Editorial Inky Mascot & Liquid Glass Chatbot (Code-split) */}
+      <Suspense fallback={null}>
+        <InkyMascot defaultTheme="obsidian" />
+        <InkyLiquidGlassChat />
+      </Suspense>
 
       {/* Main Experience View (Full bleed, unified page flow for both 2D and 3D modes) */}
       <div className="relative z-10">

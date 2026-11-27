@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { ArrowDown, Sparkles, Compass } from "lucide-react";
 
 interface HomePageStageProps {
@@ -6,18 +6,49 @@ interface HomePageStageProps {
 }
 
 export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
-  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  const sectionRef = useRef<HTMLElement>(null);
+  const artworkRef = useRef<HTMLDivElement>(null);
+  const foregroundRef = useRef<HTMLDivElement>(null);
 
-  // Subtle 3D mouse parallax tracking for deep spatial layering
+  // Subtle 3D mouse parallax via direct DOM rAF (zero React re-renders, auto-paused offscreen)
   useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      const { innerWidth, innerHeight } = window;
-      const x = (e.clientX / innerWidth - 0.5) * 2;
-      const y = (e.clientY / innerHeight - 0.5) * 2;
-      setMouseOffset({ x, y });
+    let isVisible = true;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+      },
+      { threshold: 0.02 }
+    );
+    if (sectionRef.current) io.observe(sectionRef.current);
+
+    let rafId = 0;
+    let mx = 0;
+    let my = 0;
+
+    const applyParallax = () => {
+      rafId = 0;
+      if (artworkRef.current) {
+        artworkRef.current.style.transform = `translate3d(${(mx * -14).toFixed(1)}px, ${(my * -10).toFixed(1)}px, 0) scale(1.02)`;
+      }
+      if (foregroundRef.current) {
+        foregroundRef.current.style.transform = `translate3d(${(mx * 6).toFixed(1)}px, ${(my * 4).toFixed(1)}px, 0)`;
+      }
     };
+
+    const handleMove = (e: MouseEvent) => {
+      if (!isVisible) return;
+      const { innerWidth, innerHeight } = window;
+      mx = (e.clientX / innerWidth - 0.5) * 2;
+      my = (e.clientY / innerHeight - 0.5) * 2;
+      if (!rafId) rafId = requestAnimationFrame(applyParallax);
+    };
+
     window.addEventListener("mousemove", handleMove, { passive: true });
-    return () => window.removeEventListener("mousemove", handleMove);
+    return () => {
+      io.disconnect();
+      window.removeEventListener("mousemove", handleMove);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Ensure all Home stage elements are immediately visible when returning from 3D mode
@@ -34,13 +65,13 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
 
   return (
     <section 
+      ref={sectionRef}
       id="home-stage"
       className="relative min-h-screen w-full flex flex-col justify-between px-4 sm:px-8 pt-24 pb-12 font-mono select-none overflow-hidden"
       style={{
         backgroundImage: "url('/images/main_bg.jpg')",
         backgroundPosition: "center center",
         backgroundSize: "cover",
-        backgroundAttachment: "fixed",
       }}
     >
       {/* Layer 1: Ambient Garden Tint Wash */}
@@ -53,10 +84,11 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
 
       {/* Layer 2: Grand Scale Renaissance Philosophers Artwork (Middleground with 3D Parallax) */}
       <div 
+        ref={artworkRef}
         id="home-artwork"
-        className="assemble-target absolute inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden transition-transform duration-300 ease-out"
+        className="assemble-target absolute inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden will-change-transform"
         style={{
-          transform: `translate(${mouseOffset.x * -14}px, ${mouseOffset.y * -10}px) scale(1.02)`,
+          transform: "translate3d(0px, 0px, 0) scale(1.02)",
         }}
       >
         <img 
@@ -86,10 +118,8 @@ export function HomePageStage({ onScrollToNewspaper }: HomePageStageProps) {
 
       {/* Layer 4: Foreground Hero Typography & Controls (Elevated in 3D Space) */}
       <div 
-        className="relative z-10 max-w-5xl mx-auto w-full text-center space-y-4 pt-4 transition-transform duration-200 ease-out"
-        style={{
-          transform: `translate(${mouseOffset.x * 6}px, ${mouseOffset.y * 4}px)`,
-        }}
+        ref={foregroundRef}
+        className="relative z-10 max-w-5xl mx-auto w-full text-center space-y-4 pt-4 will-change-transform"
       >
         {/* Apple Liquid Glass Pill Badge */}
         <div 

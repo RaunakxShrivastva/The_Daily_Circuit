@@ -161,44 +161,68 @@ export function IPhoneDuoStage({
     return () => clearInterval(interval);
   }, []);
 
-  // Living Ink Halftone Canvas Animation (Page 01)
+  // Living Ink Halftone Canvas Animation (Page 01) — auto-paused offscreen & 30fps throttled
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animId: number;
+    let animId = 0;
+    let isVisible = false;
+    let frameSkip = false;
     let t = 0;
+
     const render = () => {
-      t += 0.035;
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
+      if (!isVisible) {
+        animId = 0;
+        return;
+      }
+      frameSkip = !frameSkip;
+      if (!frameSkip) {
+        t += 0.055;
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
 
-      const cols = 28;
-      const rows = 6;
-      const dx = w / cols;
-      const dy = h / rows;
+        const cols = 28;
+        const rows = 6;
+        const dx = w / cols;
+        const dy = h / rows;
 
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const x = (c + 0.5) * dx;
-          const y = (r + 0.5) * dy;
-          const dist = Math.hypot(x - w * 0.35, y - h * 0.5);
-          const wave = Math.sin(dist * 0.08 - t) * 0.5 + 0.5;
-          const rad = Math.max(0.8, wave * 2.8);
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const x = (c + 0.5) * dx;
+            const y = (r + 0.5) * dy;
+            const dist = Math.hypot(x - w * 0.35, y - h * 0.5);
+            const wave = Math.sin(dist * 0.08 - t) * 0.5 + 0.5;
+            const rad = Math.max(0.8, wave * 2.8);
 
-          ctx.fillStyle = wave > 0.65 ? '#D63B24' : '#151412';
-          ctx.beginPath();
-          ctx.arc(x, y, rad, 0, Math.PI * 2);
-          ctx.fill();
+            ctx.fillStyle = wave > 0.65 ? '#D63B24' : '#151412';
+            ctx.beginPath();
+            ctx.arc(x, y, rad, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       }
       animId = requestAnimationFrame(render);
     };
-    render();
-    return () => cancelAnimationFrame(animId);
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible && !animId) {
+          animId = requestAnimationFrame(render);
+        }
+      },
+      { threshold: 0.01 }
+    );
+    io.observe(canvas);
+
+    return () => {
+      io.disconnect();
+      if (animId) cancelAnimationFrame(animId);
+    };
   }, []);
 
   // Inky cursor eye tracking
@@ -248,9 +272,11 @@ export function IPhoneDuoStage({
     }
   }, [scrollProgress, isManualScrub, currentSpread]);
 
-  // Spring physics loop for realistic paper-flipping
+  // Spring physics loop for realistic paper-flipping (sleeps when idle to save CPU)
+  const wakePhysicsRef = useRef<() => void>(() => {});
+
   useEffect(() => {
-    let animId: number;
+    let animId = 0;
     const stepPhysics = () => {
       let changed = false;
       const nextAngles: [number, number, number] = [...leafAnglesRef.current];
@@ -275,11 +301,21 @@ export function IPhoneDuoStage({
       if (changed || dragRef.current.active) {
         leafAnglesRef.current = nextAngles;
         setLeafAngles([...nextAngles]);
+        animId = requestAnimationFrame(stepPhysics);
+      } else {
+        animId = 0;
       }
-      animId = requestAnimationFrame(stepPhysics);
     };
-    animId = requestAnimationFrame(stepPhysics);
-    return () => cancelAnimationFrame(animId);
+
+    wakePhysicsRef.current = () => {
+      if (!animId) {
+        animId = requestAnimationFrame(stepPhysics);
+      }
+    };
+
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+    };
   }, []);
 
   // Jump to specific spread (0..3) with realistic sequential page flips
@@ -294,6 +330,7 @@ export function IPhoneDuoStage({
     leafTargetsRef.current[0] = clamped >= 1 ? -180 : 0;
     leafTargetsRef.current[1] = clamped >= 2 ? -180 : 0;
     leafTargetsRef.current[2] = clamped >= 3 ? -180 : 0;
+    wakePhysicsRef.current();
 
     if (!silent) {
       playSound('swish');
@@ -334,6 +371,7 @@ export function IPhoneDuoStage({
     const curAngle = leafAnglesRef.current[leafIdx];
     const target = curAngle < -90 ? -180 : 0;
     leafTargetsRef.current[leafIdx] = target;
+    wakePhysicsRef.current();
 
     // Recalculate active spread from leaf positions
     let s = 0;

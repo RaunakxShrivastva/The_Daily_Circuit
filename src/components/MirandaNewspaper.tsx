@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { 
   Flame, 
   ExternalLink, 
@@ -31,16 +31,24 @@ import {
   Code2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { MacbookScrollDemo } from './MacbookScrollDemo';
-import { FiniteBroadsheet } from './FiniteBroadsheet';
-import { IPhoneDuoStage } from './IPhoneDuoStage';
-import { EditorialCurtainFooter } from './footer/EditorialCurtainFooter';
 import { sendZapierSubscribe } from '../lib/zapier';
 import type { Story, Edition } from '../data/types';
 import type { GithubRepo, LiveEditionData } from '../lib/api';
 import { fetchLiveEdition, liveDataToStories } from '../lib/api';
 import { EDITION as STATIC_EDITION } from '../data/edition';
-import { StoryReader } from './StoryReader';
+
+const MacbookScrollDemo = lazy(() =>
+  import('./MacbookScrollDemo').then((m) => ({ default: m.MacbookScrollDemo }))
+);
+const IPhoneDuoStage = lazy(() =>
+  import('./IPhoneDuoStage').then((m) => ({ default: m.IPhoneDuoStage }))
+);
+const EditorialCurtainFooter = lazy(() =>
+  import('./footer/EditorialCurtainFooter').then((m) => ({ default: m.EditorialCurtainFooter }))
+);
+const StoryReader = lazy(() =>
+  import('./StoryReader').then((m) => ({ default: m.StoryReader }))
+);
 import { IncidentReplayStage } from './motion/IncidentReplayStage';
 import { GhostTerminalStage } from './motion/GhostTerminalStage';
 import { PromptDuelStage } from './motion/PromptDuelStage';
@@ -195,12 +203,11 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
   const [filterTag, setFilterTag] = useState<string>('All');
   const [emailInput, setEmailInput] = useState('');
   const [subscribed, setSubscribed] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const hoverCardRef = useRef<HTMLDivElement>(null);
   const [hoveredStory, setHoveredStory] = useState<Story | null>(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('page-01');
   const [showPageRail, setShowPageRail] = useState(false);
-  const [paperBlur, setPaperBlur] = useState(14);
   const [paperScale, setPaperScale] = useState(0.96);
   const [paperOpacity, setPaperOpacity] = useState(0.7);
   const [unrollProgress, setUnrollProgress] = useState(0);
@@ -262,26 +269,44 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
   };
 
   useEffect(() => {
-    let animFrameId: number;
+    if (viewMode === '3d') return;
+    let animFrameId = 0;
     let targetUnroll = 0;
     let currentUnroll = 0;
+
+    // Smooth physics lerp loop that sleeps when settled (zero idle CPU)
+    const updateLoop = () => {
+      const diff = targetUnroll - currentUnroll;
+      if (Math.abs(diff) > 0.001) {
+        currentUnroll += diff * 0.14;
+        setUnrollProgress(currentUnroll);
+        animFrameId = requestAnimationFrame(updateLoop);
+      } else {
+        if (currentUnroll !== targetUnroll) {
+          currentUnroll = targetUnroll;
+          setUnrollProgress(currentUnroll);
+        }
+        animFrameId = 0;
+      }
+    };
 
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const homeHeight = window.innerHeight || 850;
       setShowPageRail(scrollY > homeHeight * 0.7);
 
-      // Smooth optical focus resolve as user scrolls from Home Space into Newspaper
+      // Smooth GPU scale & opacity resolve as user scrolls from Home Space into Newspaper
       const progress = Math.min(1, Math.max(0, (scrollY - homeHeight * 0.4) / 700));
-      setPaperBlur((1 - progress) * 12);
       setPaperScale(0.97 + progress * 0.03);
       setPaperOpacity(Math.min(1, progress * 1.5));
 
       // Second-Page Scroll Runway: Unroll begins as second page enters viewport
-      // Starts at homeHeight * 0.45 (~400px) and smoothly unrolls all the way to the end over 1050px
       const scrollStart = homeHeight * 0.45;
       const scrollDistance = 1050;
       targetUnroll = Math.min(1, Math.max(0, (scrollY - scrollStart) / scrollDistance));
+      if (!animFrameId) {
+        animFrameId = requestAnimationFrame(updateLoop);
+      }
 
       const scrollPos = scrollY + 200;
       for (let i = PAGE_SECTIONS.length - 1; i >= 0; i--) {
@@ -293,22 +318,14 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
       }
     };
 
-    // Smooth physics lerp loop for tactile paper weight & resistance
-    const updateLoop = () => {
-      currentUnroll += (targetUnroll - currentUnroll) * 0.09;
-      setUnrollProgress(currentUnroll);
-      animFrameId = requestAnimationFrame(updateLoop);
-    };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
-    animFrameId = requestAnimationFrame(updateLoop);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      cancelAnimationFrame(animFrameId);
+      if (animFrameId) cancelAnimationFrame(animFrameId);
     };
-  }, []);
+  }, [viewMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -337,14 +354,29 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
     return () => { cancelled = true; };
   }, []);
 
-  // Track cursor for magnetic floating image preview (Miranda Signature Effect)
+  // Track cursor via direct DOM ref ONLY while a story card is hovered (zero React re-renders)
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+    if (!hoveredStory) return;
+    let rafId = 0;
+    let lx = 0;
+    let ly = 0;
+    const applyPos = () => {
+      rafId = 0;
+      if (hoverCardRef.current) {
+        hoverCardRef.current.style.transform = `translate3d(${lx + 24}px, ${ly - 80}px, 0)`;
+      }
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+    const handleMouseMove = (e: MouseEvent) => {
+      lx = e.clientX;
+      ly = e.clientY;
+      if (!rafId) rafId = requestAnimationFrame(applyPos);
+    };
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [hoveredStory]);
 
   const edition: Edition = (() => {
     if (pipelineEdition && pipelineEdition.pages) {
@@ -469,14 +501,12 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
       {/* Texture Grain Overlay */}
       <div className="miranda-grain" />
 
-      {/* Floating Magnetic Hover Thumbnail (Miranda Style) */}
+      {/* Floating Magnetic Hover Thumbnail (Miranda Style - GPU transform) */}
       {hoveredStory && (
         <div 
+          ref={hoverCardRef}
           className="miranda-hover-card"
-          style={{ 
-            left: `${mousePos.x + 24}px`, 
-            top: `${mousePos.y - 80}px` 
-          }}
+          style={{ left: 0, top: 0, willChange: 'transform' }}
         >
           <img src={hoveredStory.photo} alt="" className="miranda-hover-card__img" />
           <div className="miranda-hover-card__meta">
@@ -539,11 +569,13 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
       {viewMode === '3d' ? (
         <div ref={runwayRef} id="broadsheet-3d-section" className="relative w-full h-[280vh] z-10">
           <div className="sticky top-0 w-full h-screen flex items-center justify-center overflow-hidden">
-            <IPhoneDuoStage
-              scrollProgress={runwayProgress}
-              controlledSpread={pinnedSpread}
-              onSpreadChange={setPinnedSpread}
-            />
+            <Suspense fallback={<div className="font-mono text-xs text-zinc-400">Loading 3D Edition...</div>}>
+              <IPhoneDuoStage
+                scrollProgress={runwayProgress}
+                controlledSpread={pinnedSpread}
+                onSpreadChange={setPinnedSpread}
+              />
+            </Suspense>
           </div>
         </div>
       ) : (
@@ -557,14 +589,13 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
             }}
           />
 
-          {/* Main Printed Broadsheet Container with 3D Perspective Unroll & Optical Blur Resolve */}
+          {/* Main Printed Broadsheet Container with 3D Perspective Unroll */}
           <main 
             className="miranda-sheet transition-all duration-75 will-change-transform"
             data-perch="true"
             data-mascot-note="Edition #143 Broadsheet. Continuous 8-page infinite signal feed."
             style={{
               clipPath: unrollProgress < 0.98 ? `inset(0 0 calc(100% - ${revealedHeight + 24}px) 0)` : undefined,
-              filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
               transform: `perspective(1400px) rotateX(${((1 - unrollProgress) * -10).toFixed(2)}deg) scale(${paperScale.toFixed(3)})`,
               transformOrigin: 'top center',
               opacity: unrollProgress < 0.04 ? 0 : paperOpacity,
@@ -1408,17 +1439,23 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
           PAGE 08: MORNING TELEGRAPH & SUBSCRIPTION (MACBOOK)
           ======================================================== */}
       <section id="page-08" className="w-full min-h-screen flex flex-col items-center justify-center relative z-10 py-12">
-        <MacbookScrollDemo />
+        <Suspense fallback={null}>
+          <MacbookScrollDemo />
+        </Suspense>
       </section>
 
       {/* Two Full-Screen Pages at the End of the Broadsheet:
           Page 1: Zero Infinite Feeds Curtain Sign-Off (Full-Screen Page)
           Page 2: Grand Editorial Footer with Open Peeps Walking Crowd & Spotlight Wordmark (Full-Screen Page) */}
-      <EditorialCurtainFooter />
+      <Suspense fallback={null}>
+        <EditorialCurtainFooter />
+      </Suspense>
 
       {/* Full-Screen Interactive Story Reader (When clicking any article) */}
       {readingStory && (
-        <StoryReader story={readingStory} onClose={() => setReadingStory(null)} />
+        <Suspense fallback={null}>
+          <StoryReader story={readingStory} onClose={() => setReadingStory(null)} />
+        </Suspense>
       )}
     </div>
   );
