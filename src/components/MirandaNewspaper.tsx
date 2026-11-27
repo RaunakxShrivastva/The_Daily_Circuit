@@ -486,15 +486,20 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
         </div>
       )}
 
-      {/* Top Full-Screen Home Page Stage with Botanical Impressionist Garden Background (2D Mode only) */}
-      {viewMode !== '3d' && (
-        <HomePageStage 
-          onScrollToNewspaper={() => {
-            const homeHeight = window.innerHeight || 850;
-            window.scrollTo({ top: homeHeight * 0.45 + 1650, behavior: 'smooth' });
-          }} 
-        />
-      )}
+      {/* Top Full-Screen Home Page Stage with Botanical Impressionist Garden Background */}
+      <HomePageStage 
+        onScrollToNewspaper={() => {
+          if (viewMode === '3d') {
+            const el = document.getElementById('broadsheet-3d-section');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+              return;
+            }
+          }
+          const homeHeight = window.innerHeight || 850;
+          window.scrollTo({ top: homeHeight * 0.45 + 1650, behavior: 'smooth' });
+        }} 
+      />
 
       {/* Real-time Smooth Scroll SVG Circuit Path Draw Animation (2D Mode only) */}
       {viewMode !== '3d' && <ScrollCircuitPath />}

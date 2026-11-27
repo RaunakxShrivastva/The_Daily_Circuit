@@ -10,10 +10,10 @@ export default function App() {
   const [viewMode, setViewMode] = useState<"3d" | "miranda">(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("mode") === "2d") return "miranda";
       if (params.get("mode") === "3d") return "3d";
+      if (params.get("mode") === "2d") return "miranda";
     }
-    return "3d";
+    return "miranda";
   });
   const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
   const [introDone, setIntroDone] = useState(false);
