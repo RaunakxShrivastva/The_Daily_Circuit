@@ -1,0 +1,334 @@
+/* =========================================================================
+   iPhone Duo 3D Stage - The Daily Circuit Folding Broadsheet Architecture
+   ========================================================================= */
+
+.duo-root-theme {
+  --half-w: 268px;
+  --half-h: 346px;
+  --half-d: 10px;
+  --r-outer: 42px;
+  --r-inner: 5px;
+
+  /* Obsidian Black / Dark Grade 5 Titanium Finish (Matches The Daily Circuit aesthetic) */
+  --rail-v: linear-gradient(180deg, #525358 0%, #242529 25%, #65676e 50%, #17181b 78%, #3c3d42 100%);
+  --rail-h: linear-gradient(90deg, #212226 0%, #5a5c63 28%, #2a2b30 54%, #676970 80%, #18191c 100%);
+  --hinge-grad: linear-gradient(90deg, #17181b 0%, #4b4d54 24%, #6c6e76 48%, #28292e 76%, #131416 100%);
+  --back-glass: linear-gradient(155deg, #2c2d32 0%, #1d1e22 52%, #131417 100%);
+  --plateau-bg: linear-gradient(155deg, #333439 0%, #202126 100%);
+  --plateau-border: rgba(255, 255, 255, 0.12);
+  --plateau-shadow: 0 10px 24px rgba(0, 0, 0, 0.52), 0 2px 6px rgba(0, 0, 0, 0.36), inset 0 1px 1.5px rgba(255, 255, 255, 0.18);
+  --lens-ring: linear-gradient(135deg, #74767e 0%, #222328 50%, #52545c 100%);
+  --btn-metal: linear-gradient(180deg, #56585e 0%, #242529 100%);
+  --logo-fill: rgba(255, 255, 255, 0.18);
+}
+
+/* 3D Viewport & Perspective Container */
+.duo-viewport-3d {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1850px;
+  perspective-origin: 50% 50%;
+}
+
+.duo-stage-scaler {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Exact 536px x 346px Unfolded Assembly */
+.duo-assembly {
+  position: relative;
+  width: 536px;
+  height: 346px;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Central Titanium Micro-Hinge Spine at x = 264px */
+.duo-hinge-spine {
+  position: absolute;
+  left: 264px;
+  top: 1px;
+  width: 8px;
+  height: 344px;
+  border-radius: 4px;
+  background: var(--hinge-grad);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.8),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(0, 0, 0, 0.22);
+  transform: translateZ(-5px);
+  transform-style: preserve-3d;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.duo-hinge-spine::before,
+.duo-hinge-spine::after {
+  content: '';
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  height: 1.5px;
+  background: rgba(0, 0, 0, 0.28);
+}
+.duo-hinge-spine::before { top: 34px; }
+.duo-hinge-spine::after { bottom: 34px; }
+
+/* Left & Right Halves (268 x 346 x 10px) */
+.duo-half {
+  position: absolute;
+  top: 0;
+  width: var(--half-w);
+  height: var(--half-h);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.duo-left-half {
+  left: 0;
+  transform-origin: right center;
+}
+
+.duo-right-half {
+  left: 268px;
+  transform-origin: left center;
+}
+
+.duo-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+
+/* INNER DISPLAY FACES */
+.duo-face-inner {
+  transform: translateZ(0.5px);
+  background: #060608;
+  border: 2.5px solid #2b2c30;
+}
+
+.duo-left-half .duo-face-inner {
+  border-radius: var(--r-outer) var(--r-inner) var(--r-inner) var(--r-outer);
+  border-right: none;
+  box-shadow: inset 4px 4px 0 0 #000, inset 4px -4px 0 0 #000;
+}
+
+.duo-right-half .duo-face-inner {
+  border-radius: var(--r-inner) var(--r-outer) var(--r-outer) var(--r-inner);
+  border-left: none;
+  box-shadow: inset -4px 4px 0 0 #000, inset -4px -4px 0 0 #000;
+}
+
+/* OUTER FACES (Back face at z = -10px, rotated rotateY(180deg)) */
+.duo-face-outer {
+  transform: translateZ(-10px) rotateY(180deg);
+  background: var(--rail-v);
+  padding: 2.5px;
+}
+
+.duo-left-half .duo-face-outer {
+  border-radius: var(--r-inner) var(--r-outer) var(--r-outer) var(--r-inner);
+}
+
+.duo-right-half .duo-face-outer {
+  border-radius: var(--r-outer) var(--r-inner) var(--r-inner) var(--r-outer);
+}
+
+/* 10px Titanium Edge Walls */
+.duo-edge-wall {
+  position: absolute;
+  background: var(--rail-v);
+  backface-visibility: visible;
+}
+
+.duo-edge-outer-left {
+  top: 34px;
+  left: 0;
+  width: 10px;
+  height: calc(var(--half-h) - 68px);
+  transform-origin: left center;
+  transform: rotateY(90deg);
+}
+
+.duo-edge-outer-right {
+  top: 34px;
+  right: 0;
+  width: 10px;
+  height: calc(var(--half-h) - 68px);
+  transform-origin: right center;
+  transform: rotateY(-90deg);
+}
+
+.duo-edge-top {
+  top: 0;
+  left: 34px;
+  width: calc(var(--half-w) - 38px);
+  height: 10px;
+  background: var(--rail-h);
+  transform-origin: top center;
+  transform: rotateX(-90deg);
+}
+.duo-right-half .duo-edge-top { left: 4px; }
+
+.duo-edge-bottom {
+  bottom: 0;
+  left: 34px;
+  width: calc(var(--half-w) - 38px);
+  height: 10px;
+  background: var(--rail-h);
+  transform-origin: bottom center;
+  transform: rotateX(90deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+.duo-right-half .duo-edge-bottom { left: 4px; }
+
+/* Side buttons & details */
+.duo-side-power-btn {
+  position: absolute;
+  left: 2px;
+  top: 76px;
+  width: 5px;
+  height: 46px;
+  border-radius: 3px;
+  background: var(--btn-metal);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.duo-antenna-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: rgba(80, 80, 88, 0.35);
+}
+
+.duo-usb-c {
+  width: 20px;
+  height: 4px;
+  border-radius: 3px;
+  background: #141416;
+  border: 0.6px solid rgba(255, 255, 255, 0.4);
+}
+
+.duo-spk-dots {
+  display: flex;
+  gap: 2px;
+}
+.duo-spk-dots span {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* COVER DISPLAY BEZEL */
+.duo-cover-bezel {
+  width: 100%;
+  height: 100%;
+  border-radius: 3px 39px 39px 3px;
+  background: #000000;
+  padding: 5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.duo-cover-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px 35px 35px 2px;
+  position: relative;
+  overflow: hidden;
+  background: #0c0b09;
+}
+
+/* Punch Hole Camera */
+.duo-punch-hole {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 36%, #24385c 0%, #070b14 48%, #000000 100%);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.85), inset 0 0 2px rgba(120, 175, 255, 0.45);
+}
+
+/* REAR PANEL */
+.duo-rear-panel {
+  width: 100%;
+  height: 100%;
+  border-radius: 39px 3px 3px 39px;
+  background: var(--back-glass);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.06), inset 0 1px 2px rgba(255, 255, 255, 0.65);
+}
+
+.duo-camera-pill {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 168px;
+  height: 68px;
+  border-radius: 34px;
+  background: var(--plateau-bg);
+  border: 1px solid var(--plateau-border);
+  box-shadow: var(--plateau-shadow);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 10px;
+}
+
+.duo-fusion-lens {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--lens-ring);
+  padding: 3px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+}
+
+.duo-fusion-barrel {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #090a0d 38%, #1d1f24 72%, #0d0e11 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.duo-fusion-glass {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 32%, rgba(135, 175, 255, 0.65) 0%, rgba(110, 82, 210, 0.32) 32%, #05070e 66%, #000 100%);
+  box-shadow: inset 0 0 4px rgba(150, 190, 255, 0.48);
+  position: relative;
+}
+
+/* Floor Shadow under iPhone Duo */
+.duo-floor-shadow {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  width: 460px;
+  height: 44px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.2) 45%, rgba(0, 0, 0, 0) 75%);
+  filter: blur(14px);
+  pointer-events: none;
+}

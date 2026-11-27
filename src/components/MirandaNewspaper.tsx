@@ -33,6 +33,7 @@ import {
 import confetti from 'canvas-confetti';
 import { MacbookScrollDemo } from './MacbookScrollDemo';
 import { FiniteBroadsheet } from './FiniteBroadsheet';
+import { IPhoneDuoStage } from './IPhoneDuoStage';
 import { EditorialCurtainFooter } from './footer/EditorialCurtainFooter';
 import type { Story, Edition } from '../data/types';
 import type { GithubRepo, LiveEditionData } from '../lib/api';
@@ -207,7 +208,8 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
   const [pipelineEdition, setPipelineEdition] = useState<any>(null);
 
   // 3D Mode Scroll Runway Pinning State:
-  // Pinned spread 0..3 driven directly by the user scrolling through the runway
+  // Tracks smooth fold angle (0..1) and pinned spread (0..3) from scroll runway
+  const [runwayProgress, setRunwayProgress] = useState(0);
   const [pinnedSpread, setPinnedSpread] = useState(0);
   const runwayRef = useRef<HTMLDivElement>(null);
 
@@ -220,8 +222,7 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
       const maxScroll = rect.height - window.innerHeight;
       if (maxScroll <= 0) return;
       const progress = Math.max(0, Math.min(1, -rect.top / maxScroll));
-      const target = Math.min(3, Math.floor(progress * 4));
-      setPinnedSpread(target);
+      setRunwayProgress(progress);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -520,14 +521,14 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
 
       {/* =========================================================================
           VIEW MODE SWITCH:
-          - In 3D Mode: PURE 3D FLIP BOOK ONLY (Sticky scroll runway: user scroll pins the book and flips pages 1-8; once complete, scroll releases smoothly into MacBook & Footer)
+          - In 3D Mode: iPhone Duo Folding Broadsheet (Folded cover screen with title/headline unrolls to 180° on scroll, revealing 8-page 3D booklet that flips with continuous scroll, cleanly releasing down into MacBook & Footer)
           - In 2D Mode: Full Miranda Physical Printed Broadsheet (Continuous scroll)
           ========================================================================= */}
       {viewMode === '3d' ? (
-        <div ref={runwayRef} id="broadsheet-3d-section" className="relative w-full h-[380vh] z-10">
+        <div ref={runwayRef} id="broadsheet-3d-section" className="relative w-full h-[280vh] z-10">
           <div className="sticky top-0 w-full h-screen flex items-center justify-center overflow-hidden">
-            <FiniteBroadsheet
-              isEmbedded={true}
+            <IPhoneDuoStage
+              scrollProgress={runwayProgress}
               controlledSpread={pinnedSpread}
               onSpreadChange={setPinnedSpread}
             />

@@ -28,7 +28,7 @@
   color: var(--miranda-ink);
   font-family: var(--serif-body);
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip;
   padding: 0;
   margin: 0;
 }

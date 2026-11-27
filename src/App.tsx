@@ -43,8 +43,7 @@ export default function App() {
         width: "100vw",
         height: "auto",
         minHeight: "100vh",
-        overflowX: "hidden",
-        overflowY: "auto",
+        overflowX: "clip",
         backgroundColor: "#0d0b09",
       }}
     >
