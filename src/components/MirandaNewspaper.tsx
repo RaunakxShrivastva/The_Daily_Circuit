@@ -1393,13 +1393,13 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
             <MacbookScrollDemo />
           </div>
         </section>
-
-        {/* Minimal Architectural Editorial Curtain Footer with Open Peeps Crowd & Spotlight Wordmark */}
-        <div className="w-full mt-10">
-          <EditorialCurtainFooter />
-        </div>
       </main>
       </div>
+
+      {/* Two Full-Screen Pages at the End of the Broadsheet:
+          Page 1: Zero Infinite Feeds Curtain Sign-Off (Full-Screen Page)
+          Page 2: Grand Editorial Footer with Open Peeps Walking Crowd & Spotlight Wordmark (Full-Screen Page) */}
+      <EditorialCurtainFooter />
 
       {/* Full-Screen Interactive Story Reader (When clicking any article) */}
       {readingStory && (

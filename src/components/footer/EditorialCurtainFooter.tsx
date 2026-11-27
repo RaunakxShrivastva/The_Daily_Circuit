@@ -614,15 +614,15 @@ export function EditorialCurtainFooter() {
       `}</style>
 
       {/* =========================================================================
-           1. ARCHITECTURAL CURTAIN PREVIEW SECTION
+           1. ARCHITECTURAL CURTAIN PREVIEW SECTION (FULL PAGE 1)
            ========================================================================= */}
       <section
         id="curtainSection"
-        className="curtain-sheet min-h-[50vh] flex flex-col justify-between px-6 sm:px-12 py-10 rounded-b-[28px] sm:rounded-b-[40px] text-zinc-100"
+        className="curtain-sheet w-full min-h-screen flex flex-col justify-between px-6 sm:px-12 py-10 sm:py-12 text-zinc-100 select-none"
       >
         <div className="max-w-7xl w-full mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-[#FF453A]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#FF453A] shadow-[0_0_10px_#FF453A]" />
             <span className="font-mono text-[11px] font-semibold tracking-[0.22em] uppercase text-[#F5F5F7]">
               THE DAILY CIRCUIT
             </span>
@@ -632,37 +632,37 @@ export function EditorialCurtainFooter() {
           </span>
         </div>
 
-        <div className="max-w-3xl mx-auto text-center py-10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-[#FF453A] mb-3">
+        <div className="max-w-4xl w-full mx-auto text-center my-auto py-12 flex flex-col items-center justify-center">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.28em] text-[#FF453A] font-semibold mb-4">
             END OF TODAY&apos;S SIGNAL
           </p>
-          <h2 className="text-4xl sm:text-6xl font-serif leading-[1.02] tracking-tight text-[#F5F5F7] font-normal">
+          <h2 className="text-5xl sm:text-7xl md:text-8xl font-serif leading-[0.98] tracking-tight text-[#F5F5F7] font-normal">
             Zero infinite feeds.<br />
             <span className="italic text-white/65">Go build something real.</span>
           </h2>
-          <p className="mt-4 max-w-lg mx-auto text-xs sm:text-sm text-[#8E8E93] leading-relaxed">
+          <p className="mt-6 max-w-lg mx-auto text-sm sm:text-base text-[#8E8E93] leading-relaxed">
             Scroll down to draw back the curtain and experience the elastic tension border, live press telemetry, and crowd spotlight wordmark.
           </p>
 
-          <div className="mt-8 flex flex-col items-center gap-4">
+          <div className="mt-10 flex flex-col items-center gap-6">
             <button
               type="button"
               onClick={() => {
                 playClick(620);
                 document.getElementById("editorialFooter")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-[#F5F5F7] text-black font-mono text-[11px] font-semibold uppercase tracking-[0.16em] hover:bg-[#FF453A] hover:text-white transition-all shadow-[0_12px_36px_rgba(255,69,58,0.18)] cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full bg-[#F5F5F7] text-black font-mono text-xs font-semibold uppercase tracking-[0.16em] hover:bg-[#FF453A] hover:text-white transition-all shadow-[0_12px_36px_rgba(255,69,58,0.22)] cursor-pointer active:scale-95"
             >
               <span>Jump to Footer</span>
               <span>↓</span>
             </button>
 
-            <div className="flex flex-col items-center gap-1.5 pt-2">
-              <span className="font-mono text-[9.5px] uppercase tracking-[0.24em] text-[#8E8E93]">
+            <div className="flex flex-col items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#8E8E93]">
                 Scroll to experience the Curtain Reveal ↓
               </span>
-              <div className="w-px h-8 bg-white/15 relative overflow-hidden">
-                <div className="w-full h-3 bg-gradient-to-b from-transparent via-[#FF453A] to-white scroll-drop-bar" />
+              <div className="w-px h-10 bg-white/15 relative overflow-hidden">
+                <div className="w-full h-4 bg-gradient-to-b from-transparent via-[#FF453A] to-white scroll-drop-bar" />
               </div>
             </div>
           </div>
@@ -675,11 +675,11 @@ export function EditorialCurtainFooter() {
       </section>
 
       {/* =========================================================================
-           2. CENTERPIECE: ULTRA-MINIMAL ANIMATED EDITORIAL FOOTER
+           2. CENTERPIECE: ULTRA-MINIMAL ANIMATED EDITORIAL FOOTER (FULL PAGE 2)
            ========================================================================= */}
       <footer
         id="editorialFooter"
-        className="w-full bg-[#08080A] text-[#F5F5F7] pt-2 pb-8 relative z-10"
+        className="w-full min-h-screen flex flex-col justify-between bg-[#08080A] text-[#F5F5F7] pt-2 pb-8 relative z-10"
       >
         {/* SIGNATURE ANIMATION 1: ELASTIC TENSION STRING TOP BORDER */}
         <div
