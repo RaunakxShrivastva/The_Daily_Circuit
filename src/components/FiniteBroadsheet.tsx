@@ -99,9 +99,19 @@ interface EditionData {
   };
 }
 
+interface FiniteBroadsheetProps {
+  isEmbedded?: boolean;
+  controlledSpread?: number;
+  onSpreadChange?: (spread: number) => void;
+}
+
 const TOTAL_SPREADS = 4;
 
-export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean } = {}) {
+export function FiniteBroadsheet({
+  isEmbedded = false,
+  controlledSpread,
+  onSpreadChange,
+}: FiniteBroadsheetProps = {}) {
   const [currentSpread, setCurrentSpread] = useState(0);
   const [animatingDir, setAnimatingDir] = useState<'next' | 'prev' | null>(null);
   const [edition, setEdition] = useState<EditionData | null>(null);
@@ -115,12 +125,30 @@ export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastWheelTime = useRef(0);
 
-  // Scroll to flip pages in embedded 3D mode:
-  // Traps scroll to flip spreads 0 -> 1 -> 2 -> 3 with realistic curl and audio.
-  // When at the final spread (spread 3, pages 7 & 8), downward scroll naturally flows down into MacBook!
-  // When at the first spread (spread 0), upward scroll flows back up to HomePage!
+  // Sync with scroll-controlled spread when embedded
   useEffect(() => {
-    if (!isEmbedded) return;
+    if (controlledSpread !== undefined && controlledSpread !== currentSpread && !animatingDir) {
+      if (controlledSpread > currentSpread) {
+        setAnimatingDir('next');
+        playFlipSound();
+        setTimeout(() => {
+          setCurrentSpread(controlledSpread);
+          setAnimatingDir(null);
+        }, 580);
+      } else if (controlledSpread < currentSpread) {
+        setAnimatingDir('prev');
+        playFlipSound();
+        setTimeout(() => {
+          setCurrentSpread(controlledSpread);
+          setAnimatingDir(null);
+        }, 580);
+      }
+    }
+  }, [controlledSpread, currentSpread, animatingDir]);
+
+  // Wheel listener when not controlled by scroll runway
+  useEffect(() => {
+    if (!isEmbedded || controlledSpread !== undefined) return;
     const el = containerRef.current || deskStageRef.current;
     if (!el) return;
 
@@ -143,7 +171,7 @@ export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean 
 
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [isEmbedded, currentSpread, animatingDir]);
+  }, [isEmbedded, controlledSpread, currentSpread, animatingDir]);
 
   // Fetch compiled daily edition
   useEffect(() => {
@@ -190,15 +218,19 @@ export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean 
     if (dir === 'next' && currentSpread < TOTAL_SPREADS - 1) {
       setAnimatingDir('next');
       playFlipSound();
+      const nextS = currentSpread + 1;
       setTimeout(() => {
-        setCurrentSpread((s) => s + 1);
+        setCurrentSpread(nextS);
+        onSpreadChange?.(nextS);
         setAnimatingDir(null);
       }, 580);
     } else if (dir === 'prev' && currentSpread > 0) {
       setAnimatingDir('prev');
       playFlipSound();
+      const prevS = currentSpread - 1;
       setTimeout(() => {
-        setCurrentSpread((s) => s - 1);
+        setCurrentSpread(prevS);
+        onSpreadChange?.(prevS);
         setAnimatingDir(null);
       }, 580);
     }
@@ -360,38 +392,40 @@ export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean 
       ref={containerRef}
       className={
         isEmbedded
-          ? "studio-desk-surface w-full min-h-screen py-6 flex flex-col justify-between items-center relative overflow-hidden select-none"
+          ? "w-full h-full flex flex-col justify-center items-center relative overflow-hidden select-none bg-transparent"
           : "studio-desk-surface w-screen h-screen flex flex-col justify-between overflow-hidden select-none"
       }
     >
-      {/* Top Header Bar */}
-      <header className="desk-header px-6 py-2.5 flex items-center justify-between border-b border-white/10 z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="font-mono text-xs uppercase tracking-widest text-neutral-300 font-semibold">
-            The Daily Circuit · 24H Intelligence Press
-          </span>
-          <span className="text-neutral-500 text-xs">|</span>
-          <span className="font-mono text-xs text-neutral-400">
-            {edition?.date || new Date().toISOString().split('T')[0]}
-          </span>
-        </div>
+      {/* Top Header Bar - Hidden in 3D Mode when embedded so only the flip book is seen */}
+      {!isEmbedded && (
+        <header className="desk-header px-6 py-2.5 flex items-center justify-between border-b border-white/10 z-30">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-mono text-xs uppercase tracking-widest text-neutral-300 font-semibold">
+              The Daily Circuit · 24H Intelligence Press
+            </span>
+            <span className="text-neutral-500 text-xs">|</span>
+            <span className="font-mono text-xs text-neutral-400">
+              {edition?.date || new Date().toISOString().split('T')[0]}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-neutral-900/90 border border-neutral-800 px-3 py-1 rounded-full text-xs font-mono text-neutral-400">
-            <Clock size={12} className="text-amber-500" />
-            <span>Next Press In: {countdown}</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-neutral-900/90 border border-neutral-800 px-3 py-1 rounded-full text-xs font-mono text-neutral-400">
+              <Clock size={12} className="text-amber-500" />
+              <span>Next Press In: {countdown}</span>
+            </div>
+            <div className="bg-red-950/40 border border-red-800/40 text-red-400 text-xs font-mono px-2.5 py-0.5 rounded uppercase tracking-wider font-bold">
+              {edition?.signalRatio || 96.8}% Signal Ratio
+            </div>
           </div>
-          <div className="bg-red-950/40 border border-red-800/40 text-red-400 text-xs font-mono px-2.5 py-0.5 rounded uppercase tracking-wider font-bold">
-            {edition?.signalRatio || 96.8}% Signal Ratio
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Main 3D Broadsheet Desk Stage */}
       <main
         ref={deskStageRef}
-        className="flex-1 flex items-center justify-center relative overflow-hidden p-3"
+        className={isEmbedded ? "flex-1 flex items-center justify-center relative overflow-hidden p-0 w-full h-full" : "flex-1 flex items-center justify-center relative overflow-hidden p-3"}
       >
         <div
           ref={rootRef}
@@ -1023,48 +1057,50 @@ export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean 
         </div>
       </main>
 
-      {/* Bottom Desk Control Dock */}
-      <footer className="desk-footer px-6 py-3 flex items-center justify-between border-t border-white/10 z-30 bg-[#12110f]/95 backdrop-blur-md">
-        <button
-          onClick={() => turnSpread('prev')}
-          disabled={currentSpread === 0 || !!animatingDir}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neutral-300 disabled:opacity-30 disabled:pointer-events-none transition-all"
-        >
-          <ChevronLeft size={14} />
-          <span>Previous Spread</span>
-        </button>
+      {/* Bottom Desk Control Dock - Hidden in 3D Mode when embedded so buttons are removed */}
+      {!isEmbedded && (
+        <footer className="desk-footer px-6 py-3 flex items-center justify-between border-t border-white/10 z-30 bg-[#12110f]/95 backdrop-blur-md">
+          <button
+            onClick={() => turnSpread('prev')}
+            disabled={currentSpread === 0 || !!animatingDir}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neutral-300 disabled:opacity-30 disabled:pointer-events-none transition-all"
+          >
+            <ChevronLeft size={14} />
+            <span>Previous Spread</span>
+          </button>
 
-        {/* Spread Navigation Indicators */}
-        <div className="flex items-center gap-2">
-          {Array.from({ length: TOTAL_SPREADS }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                if (currentSpread !== i && !animatingDir) {
-                  playFlipSound();
-                  setCurrentSpread(i);
-                }
-              }}
-              className={`px-2.5 py-1 rounded text-xs font-mono transition-all border ${
-                currentSpread === i
-                  ? 'bg-[#c83e2b] text-white border-[#c83e2b] font-bold'
-                  : 'bg-white/5 text-neutral-400 border-white/10 hover:border-white/30'
-              }`}
-            >
-              Spread 0{i + 1} (P{i * 2 + 1}-{i * 2 + 2})
-            </button>
-          ))}
-        </div>
+          {/* Spread Navigation Indicators */}
+          <div className="flex items-center gap-2">
+            {Array.from({ length: TOTAL_SPREADS }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  if (currentSpread !== i && !animatingDir) {
+                    playFlipSound();
+                    setCurrentSpread(i);
+                  }
+                }}
+                className={`px-2.5 py-1 rounded text-xs font-mono transition-all border ${
+                  currentSpread === i
+                    ? 'bg-[#c83e2b] text-white border-[#c83e2b] font-bold'
+                    : 'bg-white/5 text-neutral-400 border-white/10 hover:border-white/30'
+                }`}
+              >
+                Spread 0{i + 1} (P{i * 2 + 1}-{i * 2 + 2})
+              </button>
+            ))}
+          </div>
 
-        <button
-          onClick={() => turnSpread('next')}
-          disabled={currentSpread >= TOTAL_SPREADS - 1 || !!animatingDir}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neutral-300 disabled:opacity-30 disabled:pointer-events-none transition-all"
-        >
-          <span>Next Spread</span>
-          <ChevronRight size={14} />
-        </button>
-      </footer>
+          <button
+            onClick={() => turnSpread('next')}
+            disabled={currentSpread >= TOTAL_SPREADS - 1 || !!animatingDir}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neutral-300 disabled:opacity-30 disabled:pointer-events-none transition-all"
+          >
+            <span>Next Spread</span>
+            <ChevronRight size={14} />
+          </button>
+        </footer>
+      )}
     </div>
   );
 }

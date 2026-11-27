@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Flame, 
   ExternalLink, 
@@ -205,6 +205,29 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
   const [maxRollTravel, setMaxRollTravel] = useState(2100);
 
   const [pipelineEdition, setPipelineEdition] = useState<any>(null);
+
+  // 3D Mode Scroll Runway Pinning State:
+  // Pinned spread 0..3 driven directly by the user scrolling through the runway
+  const [pinnedSpread, setPinnedSpread] = useState(0);
+  const runwayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (viewMode !== '3d') return;
+
+    const handleScroll = () => {
+      if (!runwayRef.current) return;
+      const rect = runwayRef.current.getBoundingClientRect();
+      const maxScroll = rect.height - window.innerHeight;
+      if (maxScroll <= 0) return;
+      const progress = Math.max(0, Math.min(1, -rect.top / maxScroll));
+      const target = Math.min(3, Math.floor(progress * 4));
+      setPinnedSpread(target);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [viewMode]);
 
   useEffect(() => {
     const calcMaxTravel = () => {
@@ -497,13 +520,19 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
 
       {/* =========================================================================
           VIEW MODE SWITCH:
-          - In 3D Mode: PURE 3D FLIP BOOK ONLY (No beige paper sheet, no masthead, no tabs!)
+          - In 3D Mode: PURE 3D FLIP BOOK ONLY (Sticky scroll runway: user scroll pins the book and flips pages 1-8; once complete, scroll releases smoothly into MacBook & Footer)
           - In 2D Mode: Full Miranda Physical Printed Broadsheet (Continuous scroll)
           ========================================================================= */}
       {viewMode === '3d' ? (
-        <section id="broadsheet-3d-section" className="w-full min-h-screen relative z-10 flex flex-col items-center justify-center py-4">
-          <FiniteBroadsheet isEmbedded={true} />
-        </section>
+        <div ref={runwayRef} id="broadsheet-3d-section" className="relative w-full h-[380vh] z-10">
+          <div className="sticky top-0 w-full h-screen flex items-center justify-center overflow-hidden">
+            <FiniteBroadsheet
+              isEmbedded={true}
+              controlledSpread={pinnedSpread}
+              onSpreadChange={setPinnedSpread}
+            />
+          </div>
+        </div>
       ) : (
         <div className="relative max-w-[1260px] mx-auto mt-16 sm:mt-24">
           <WaxSealManuscriptUnroll 

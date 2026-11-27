@@ -54,15 +54,17 @@ export default function App() {
       {/* 5 Autonomous AI Editors Multiplayer Cursor Assembly Engine */}
       <CursorAssemblyEngine active={introDone} />
 
-      {/* Impressionist Botanical Oil Painting Background */}
-      <div 
-        className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('/images/main_bg.jpg')",
-          backgroundAttachment: "fixed",
-          opacity: 0.88,
-        }}
-      />
+      {/* Impressionist Botanical Oil Painting Background - Hidden in 3D Mode for pure editorial focus */}
+      {viewMode !== "3d" && (
+        <div 
+          className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat transition-opacity duration-500"
+          style={{
+            backgroundImage: "url('/images/main_bg.jpg')",
+            backgroundAttachment: "fixed",
+            opacity: 0.88,
+          }}
+        />
+      )}
 
       {/* Soft Vignette Overlay for Depth & High-Contrast Reading */}
       <div 
