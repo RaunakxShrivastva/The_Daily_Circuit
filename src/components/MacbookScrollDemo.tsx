@@ -4,6 +4,7 @@ import { LiquidGlassScreen } from "./LiquidGlassScreen";
 import { Keyboard } from "./ui/keyboard";
 import { Volume2, Sparkles } from "lucide-react";
 import confetti from "canvas-confetti";
+import { sendZapierSubscribe } from "../lib/zapier";
 
 export function MacbookScrollDemo() {
   const [email, setEmail] = useState("");
@@ -11,13 +12,14 @@ export function MacbookScrollDemo() {
     return typeof window !== "undefined" ? !!localStorage.getItem("tdc_subscribed_email") : false;
   });
 
-  const handleSubscribe = (e?: React.FormEvent) => {
+  const handleSubscribe = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!email || !email.includes("@")) return;
     setSubscribed(true);
-    try {
-      localStorage.setItem("tdc_subscribed_email", email);
-    } catch (_) {}
+    await sendZapierSubscribe({
+      email,
+      source: "MacBook Mechanical Keyboard",
+    });
     confetti({
       particleCount: 80,
       spread: 90,

@@ -1,7 +1,8 @@
-import React from "react";
-import { Mail, Sparkles, CheckCircle2 } from "lucide-react";
+import React, { useState } from "react";
+import { Mail, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { CloudShader } from "./ui/cloud-shader";
+import { sendZapierSubscribe } from "../lib/zapier";
 
 export interface LiquidGlassScreenProps {
   email: string;
@@ -18,16 +19,28 @@ export function LiquidGlassScreen({
   setSubscribed,
   onFocusEmail,
 }: LiquidGlassScreenProps) {
-  const handleSubscribe = (e?: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  const handleSubscribe = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!email || !email.includes("@")) return;
+
+    setIsSubmitting(true);
+    setStatusMsg("Transmitting via Zapier AI...");
+
+    const res = await sendZapierSubscribe({
+      email,
+      source: "MacBook Pro Telegraph Screen",
+    });
+
+    setIsSubmitting(false);
     setSubscribed(true);
-    try {
-      localStorage.setItem("tdc_subscribed_email", email);
-    } catch (_) {}
+    setStatusMsg(res.message);
+
     confetti({
-      particleCount: 65,
-      spread: 75,
+      particleCount: 75,
+      spread: 80,
       origin: { y: 0.8 },
       colors: ["#10b981", "#34d399", "#6ee7b7", "#ffffff"],
     });
@@ -95,9 +108,14 @@ export function LiquidGlassScreen({
           {/* Minimal Liquid Glass Subscription Input Pill (Prominent in view!) */}
           <div className="w-full max-w-md mx-auto mt-2.5">
             {subscribed ? (
-              <div className="flex items-center justify-center gap-2 p-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 backdrop-blur-xl text-emerald-300 text-xs font-mono shadow-[0_12px_32px_rgba(16,185,129,0.2)]">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span className="font-semibold text-[11px]">Subscribed! Edition No. 843 dispatch confirmed.</span>
+              <div className="flex flex-col items-center justify-center p-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 backdrop-blur-xl text-emerald-300 text-xs font-mono shadow-[0_12px_32px_rgba(16,185,129,0.2)] animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span className="font-semibold text-[11px]">Subscribed! Edition No. 843 dispatch confirmed.</span>
+                </div>
+                {statusMsg && (
+                  <span className="text-[9px] text-emerald-200/90 mt-1">{statusMsg}</span>
+                )}
               </div>
             ) : (
               <form onSubmit={handleSubscribe} className="relative flex items-center">
@@ -125,13 +143,22 @@ export function LiquidGlassScreen({
                     onClick={handleInputClick}
                     name="telegraph_dispatch_addr"
                     required
+                    disabled={isSubmitting}
                     className="w-full bg-transparent border-none text-white text-[11px] placeholder-zinc-400 focus:outline-none font-mono"
                   />
                   <button
                     type="submit"
-                    className="px-3.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-mono font-bold text-[10px] uppercase tracking-wider rounded-full shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                    disabled={isSubmitting}
+                    className="px-3.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-mono font-bold text-[10px] uppercase tracking-wider rounded-full shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    Subscribe Daily →
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Transmitting...</span>
+                      </>
+                    ) : (
+                      <span>Subscribe Daily →</span>
+                    )}
                   </button>
                 </div>
               </form>

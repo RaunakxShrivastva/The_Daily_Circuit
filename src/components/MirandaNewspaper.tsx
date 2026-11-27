@@ -35,6 +35,7 @@ import { MacbookScrollDemo } from './MacbookScrollDemo';
 import { FiniteBroadsheet } from './FiniteBroadsheet';
 import { IPhoneDuoStage } from './IPhoneDuoStage';
 import { EditorialCurtainFooter } from './footer/EditorialCurtainFooter';
+import { sendZapierSubscribe } from '../lib/zapier';
 import type { Story, Edition } from '../data/types';
 import type { GithubRepo, LiveEditionData } from '../lib/api';
 import { fetchLiveEdition, liveDataToStories } from '../lib/api';
@@ -438,11 +439,15 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
     }
   };
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput) return;
     setSubscribed(true);
     window.dispatchEvent(new CustomEvent("daily-circuit:stamp"));
+    await sendZapierSubscribe({
+      email: emailInput,
+      source: "Miranda Physical Broadsheet (Section 8)",
+    });
     confetti({
       particleCount: 70,
       spread: 60,

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { sendZapierSubscribe } from "../../lib/zapier";
 
 export function EditorialCurtainFooter() {
   const [soundOn, setSoundOn] = useState(true);
@@ -521,7 +522,7 @@ export function EditorialCurtainFooter() {
     };
   }, []);
 
-  const handleSubscribeSubmit = (e: React.FormEvent) => {
+  const handleSubscribeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes("@")) {
       playClick(320);
@@ -529,7 +530,12 @@ export function EditorialCurtainFooter() {
     }
     setSubscribed(true);
     playClick(620);
-    showToast("Morning Wire confirmed for 06:00 IST");
+    showToast("Transmitting via Zapier AI...");
+    const res = await sendZapierSubscribe({
+      email,
+      source: "Editorial Curtain Footer",
+    });
+    showToast(res.deliveredToZapier ? "✓ Dispatched! Welcome email sent via Zapier AI" : "Morning Wire confirmed for 06:00 IST");
   };
 
   return (
