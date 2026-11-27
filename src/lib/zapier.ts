@@ -27,7 +27,8 @@ export async function sendZapierSubscribe(
     import.meta.env.VITE_ZAPIER_WEBHOOK_URL ||
     (typeof window !== "undefined"
       ? localStorage.getItem("tdc_sheet_url") || localStorage.getItem("tdc_zapier_webhook_url")
-      : null);
+      : null) ||
+    "https://script.google.com/macros/s/AKfycbzRKLbV1JprSk5SpcLEuGNME_2sinhV-9gZZ-1inUQPAUemu1kQiPMD-pXv1oHwBs6r/exec";
 
   const fullData = {
     email: payload.email,
