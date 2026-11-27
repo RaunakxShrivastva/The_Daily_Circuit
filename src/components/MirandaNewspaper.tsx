@@ -33,6 +33,7 @@ import {
 import confetti from 'canvas-confetti';
 import { MacbookScrollDemo } from './MacbookScrollDemo';
 import { FiniteBroadsheet } from './FiniteBroadsheet';
+import { EditorialCurtainFooter } from './footer/EditorialCurtainFooter';
 import type { Story, Edition } from '../data/types';
 import type { GithubRepo, LiveEditionData } from '../lib/api';
 import { fetchLiveEdition, liveDataToStories } from '../lib/api';
@@ -1393,27 +1394,10 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
           </div>
         </section>
 
-        {/* Colophon & Footer */}
-        <footer className="miranda-colophon">
-          <div className="miranda-colophon__cols">
-            <div>
-              <h4>THE DAILY CIRCUIT</h4>
-              <p>The newspaper of the intelligence age. Published continuously from the digital newsroom.</p>
-            </div>
-            <div>
-              <h4>INTEGRATIONS &amp; APIS</h4>
-              <p>HackerNews Telegraph · GitHub Search Engine · Dev.to Longreads · Google Gemini 1.5 Flash QA.</p>
-            </div>
-            <div>
-              <h4>TYPOGRAPHY</h4>
-              <p>Typeset in Bodoni Moda, Newsreader 16pt, and IBM Plex Monospace. Printed on high-opacity archival digital stock.</p>
-            </div>
-          </div>
-          <div className="miranda-colophon__bottom">
-            <span>© 2026 THE DAILY CIRCUIT. ALL ARCHIVES PRESERVED.</span>
-            <span>PRESS REVIEWS: AWWWARDS NOMINEE · DIGITAL &amp; AI LITERACY SHOWCASE</span>
-          </div>
-        </footer>
+        {/* Minimal Architectural Editorial Curtain Footer with Open Peeps Crowd & Spotlight Wordmark */}
+        <div className="w-full mt-10">
+          <EditorialCurtainFooter />
+        </div>
       </main>
       </div>
 

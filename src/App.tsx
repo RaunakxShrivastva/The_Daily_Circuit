@@ -4,6 +4,7 @@ import { LiquidGlassNavbar } from "./components/navigation/LiquidGlassNavbar";
 import { CinematicIntroOverlay } from "./components/motion/CinematicIntroOverlay";
 import { CursorAssemblyEngine } from "./components/motion/CursorAssemblyEngine";
 import { InkyMascot } from "./components/InkyMascot";
+import { InkyLiquidGlassChat } from "./components/chat/InkyLiquidGlassChat";
 
 export default function App() {
   const [viewMode, setViewMode] = useState<"3d" | "miranda">("miranda");
@@ -88,6 +89,9 @@ export default function App() {
 
       {/* Autonomous Editorial Inky Mascot with Physics & Perch */}
       <InkyMascot defaultTheme="obsidian" />
+
+      {/* Apple HIG / macOS Tahoe Liquid Glass Inky Chatbot */}
+      <InkyLiquidGlassChat />
 
       {/* Main Experience View (Full bleed, unified page flow for both 2D and 3D modes) */}
       <div className="relative z-10">

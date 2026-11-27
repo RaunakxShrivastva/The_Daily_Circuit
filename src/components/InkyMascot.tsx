@@ -1222,21 +1222,9 @@ Answer the reader's question directly, accurately, and humorously in 1-2 punchy 
         say(ans, 8500);
       })
       .catch((err) => {
-        console.warn("Groq mascot error, opening Botpress console:", err);
-        const botpress = (window as unknown as {
-          botpressWebChat?: {
-            open?: () => void;
-            setDraft?: (val: string) => void;
-            focus?: () => void;
-          };
-        }).botpressWebChat;
-        if (botpress?.open) {
-          botpress.open();
-          if (botpress.setDraft) botpress.setDraft(targetQuery.trim());
-          botpress.focus?.();
-        } else {
-          say("Try: summarize, top repo, top model, signal, jump, or backflip.");
-        }
+        console.warn("Groq mascot error, opening Inky AI console:", err);
+        window.dispatchEvent(new CustomEvent("daily-circuit:open-chat"));
+        say("Ask me in my chat console!", 3000);
       });
   };
 
@@ -1774,14 +1762,10 @@ Answer the reader's question directly, accurately, and humorously in 1-2 punchy 
           <button
             type="button"
             onClick={() => {
-              const botpress = (window as unknown as { botpressWebChat?: { open?: () => void; focus?: () => void } }).botpressWebChat;
-              if (botpress?.open) {
-                botpress.open();
-                botpress.focus?.();
-              }
+              window.dispatchEvent(new CustomEvent("daily-circuit:open-chat"));
               closeAsk();
               playChirp(520, 680, 0.08);
-              say("Botpress AI console opened!", 2500);
+              say("Inky Liquid Glass AI assistant opened!", 2500);
             }}
             style={{
               width: "100%",
