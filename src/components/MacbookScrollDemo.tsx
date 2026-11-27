@@ -90,8 +90,8 @@ export function MacbookScrollDemo() {
         />
       </MacbookScroll>
 
-      {/* 2. Sleek Mechanical Keyboard Controls Strip */}
-      <div className="flex items-center justify-between w-full max-w-2xl px-4 -mt-16 sm:-mt-24 mb-2 text-xs font-mono text-zinc-400 relative z-20">
+      {/* 2. Sleek Mechanical Keyboard Controls Strip (Positioned cleanly below MacBook) */}
+      <div className="flex items-center justify-between w-full max-w-2xl px-4 mt-6 sm:mt-10 mb-2 text-xs font-mono text-zinc-400 relative z-20">
         <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <Volume2 className="w-3.5 h-3.5" />

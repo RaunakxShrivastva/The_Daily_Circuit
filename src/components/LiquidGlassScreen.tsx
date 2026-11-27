@@ -114,12 +114,12 @@ export function LiquidGlassScreen({
                     autoCapitalize="none"
                     autoCorrect="off"
                     spellCheck={false}
-                    autoComplete="off"
+                    autoComplete="one-time-code"
                     data-1p-ignore="true"
                     data-lpignore="true"
                     data-bwignore="true"
                     data-form-type="other"
-                    placeholder="Enter your telegraph email address..."
+                    placeholder="Enter dispatch recipient..."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onClick={handleInputClick}

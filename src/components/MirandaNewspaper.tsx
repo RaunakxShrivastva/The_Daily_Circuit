@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { MacbookScrollDemo } from './MacbookScrollDemo';
+import { FiniteBroadsheet } from './FiniteBroadsheet';
 import type { Story, Edition } from '../data/types';
 import type { GithubRepo, LiveEditionData } from '../lib/api';
 import { fetchLiveEdition, liveDataToStories } from '../lib/api';
@@ -184,7 +185,7 @@ const FOUNDRY_DISPATCHES = [
   }
 ];
 
-export function MirandaNewspaper() {
+export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | 'miranda' } = {}) {
   const [liveData, setLiveData] = useState<LiveEditionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [readingStory, setReadingStory] = useState<Story | null>(null);
@@ -493,15 +494,17 @@ export function MirandaNewspaper() {
 
       {/* 3D Physical Manuscript Unroll Wrapper on Second Page */}
       <div className="relative max-w-[1260px] mx-auto mt-16 sm:mt-24">
-        {/* The 3D Rolling Cylinder and Wax Seal that moves down as you scroll */}
-        <WaxSealManuscriptUnroll 
-          scrollProgress={unrollProgress}
-          maxRollTravel={maxRollTravel}
-          onBreakSeal={() => {
-            const homeHeight = window.innerHeight || 850;
-            window.scrollTo({ top: homeHeight * 0.45 + 1650, behavior: 'smooth' });
-          }}
-        />
+        {/* The 3D Rolling Cylinder and Wax Seal that moves down as you scroll (in 2D mode) */}
+        {viewMode !== '3d' && (
+          <WaxSealManuscriptUnroll 
+            scrollProgress={unrollProgress}
+            maxRollTravel={maxRollTravel}
+            onBreakSeal={() => {
+              const homeHeight = window.innerHeight || 850;
+              window.scrollTo({ top: homeHeight * 0.45 + 1650, behavior: 'smooth' });
+            }}
+          />
+        )}
 
         {/* Main Printed Broadsheet Container with 3D Perspective Unroll & Optical Blur Resolve */}
         <main 
@@ -509,11 +512,11 @@ export function MirandaNewspaper() {
           data-perch="true"
           data-mascot-note="Edition #143 Broadsheet. Continuous 8-page infinite signal feed."
           style={{
-            clipPath: unrollProgress < 0.98 ? `inset(0 0 calc(100% - ${revealedHeight + 24}px) 0)` : undefined,
+            clipPath: viewMode !== '3d' && unrollProgress < 0.98 ? `inset(0 0 calc(100% - ${revealedHeight + 24}px) 0)` : undefined,
             filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
-            transform: `perspective(1400px) rotateX(${((1 - unrollProgress) * -10).toFixed(2)}deg) scale(${paperScale.toFixed(3)})`,
+            transform: viewMode !== '3d' ? `perspective(1400px) rotateX(${((1 - unrollProgress) * -10).toFixed(2)}deg) scale(${paperScale.toFixed(3)})` : undefined,
             transformOrigin: 'top center',
-            opacity: unrollProgress < 0.04 ? 0 : paperOpacity,
+            opacity: viewMode !== '3d' && unrollProgress < 0.04 ? 0 : paperOpacity,
           }}
         >
         {/* Glowing Copper PCB Reading Spine on the left paper edge */}
@@ -594,9 +597,29 @@ export function MirandaNewspaper() {
         </nav>
 
         {/* ========================================================
-            PAGE 01: FRONT PAGE & BREAKING WIRE
+            3D TACTILE BROADSHEET (EMBEDDED FLIP BOOK) OR 2D SECTIONS
             ======================================================== */}
-        <section id="page-01" className="miranda-page-section">
+        {viewMode === '3d' ? (
+          <div className="w-full my-6 flex flex-col items-center">
+            <div className="w-full max-w-5xl mb-4 flex items-center justify-between px-4 py-2.5 rounded-xl bg-[#231e17]/85 border border-[#433728]/70 text-xs font-mono text-amber-200 shadow-lg">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-semibold uppercase tracking-wider text-amber-100">
+                  3D Paper-Turn Broadsheet Active
+                </span>
+              </div>
+              <div className="text-[11px] text-[#e8ded1]/80">
+                Scroll on paper or drag corners to turn (Pages 1–8) · Scroll further down for MacBook
+              </div>
+            </div>
+            <FiniteBroadsheet isEmbedded={true} />
+          </div>
+        ) : (
+          <>
+            {/* ========================================================
+                PAGE 01: FRONT PAGE & BREAKING WIRE
+                ======================================================== */}
+            <section id="page-01" className="miranda-page-section">
           <div className="miranda-page-edge-tag">PAGE 01 · FRONT WIRE</div>
           <div className="miranda-front-grid">
             {/* Left Big Lead Story */}
@@ -1346,6 +1369,8 @@ export function MirandaNewspaper() {
             </table>
           </div>
         </section>
+        </>
+        )}
 
         {/* ========================================================
             PAGE 08: MORNING TELEGRAPH & SUBSCRIPTION

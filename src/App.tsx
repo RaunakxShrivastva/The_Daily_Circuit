@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { FiniteBroadsheet } from "./components/FiniteBroadsheet";
 import { MirandaNewspaper } from "./components/MirandaNewspaper";
 import { LiquidGlassNavbar } from "./components/navigation/LiquidGlassNavbar";
 import { CinematicIntroOverlay } from "./components/motion/CinematicIntroOverlay";
@@ -21,9 +20,6 @@ export default function App() {
 
   const handleViewChange = useCallback((mode: "3d" | "miranda") => {
     setViewMode(mode);
-    if (mode === "miranda") {
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    }
   }, []);
 
   const handleIntroComplete = useCallback(() => {
@@ -44,10 +40,10 @@ export default function App() {
       style={{
         position: "relative",
         width: "100vw",
-        height: viewMode === "miranda" ? "auto" : "100vh",
+        height: "auto",
         minHeight: "100vh",
         overflowX: "hidden",
-        overflowY: viewMode === "miranda" ? "auto" : "hidden",
+        overflowY: "auto",
         backgroundColor: "#0d0b09",
       }}
     >
@@ -93,9 +89,9 @@ export default function App() {
       {/* Autonomous Editorial Inky Mascot with Physics & Perch */}
       <InkyMascot defaultTheme="obsidian" />
 
-      {/* Main Experience View (Full bleed, no top padding gap) */}
+      {/* Main Experience View (Full bleed, unified page flow for both 2D and 3D modes) */}
       <div className="relative z-10">
-        {viewMode === "3d" ? <FiniteBroadsheet /> : <MirandaNewspaper />}
+        <MirandaNewspaper viewMode={viewMode} />
       </div>
     </div>
   );

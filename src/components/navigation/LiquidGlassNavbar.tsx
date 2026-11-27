@@ -409,9 +409,9 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
                       onViewChange(viewMode === "3d" ? "miranda" : "3d");
                     }}
                     className={`notch-link cursor-pointer ${viewMode === "3d" ? "active" : ""}`}
-                    title="Toggle 3D Tactile Broadsheet / Miranda Reader"
+                    title={viewMode === "3d" ? "Switch to 2D Scroll Newspaper" : "Switch to 3D Paper-Turn Broadsheet"}
                   >
-                    {viewMode === "3d" ? "3D Paper" : "3D Mode"}
+                    {viewMode === "3d" ? "2D Mode" : "3D Mode"}
                   </button>
                 </div>
 

@@ -101,7 +101,7 @@ interface EditionData {
 
 const TOTAL_SPREADS = 4;
 
-export function FiniteBroadsheet() {
+export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean } = {}) {
   const [currentSpread, setCurrentSpread] = useState(0);
   const [animatingDir, setAnimatingDir] = useState<'next' | 'prev' | null>(null);
   const [edition, setEdition] = useState<EditionData | null>(null);
@@ -112,6 +112,37 @@ export function FiniteBroadsheet() {
   const deskStageRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lastWheelTime = useRef(0);
+
+  // Scroll to flip pages in embedded 3D mode:
+  // Traps scroll to flip spreads 0 -> 1 -> 2 -> 3 with realistic curl and audio.
+  // When at the final spread (spread 3, pages 7 & 8), downward scroll naturally flows down into MacBook!
+  // When at the first spread (spread 0), upward scroll flows back up to HomePage!
+  useEffect(() => {
+    if (!isEmbedded) return;
+    const el = deskStageRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      const now = Date.now();
+      if (e.deltaY > 30 && currentSpread < TOTAL_SPREADS - 1) {
+        e.preventDefault();
+        if (now - lastWheelTime.current > 520 && !animatingDir) {
+          lastWheelTime.current = now;
+          turnSpread('next');
+        }
+      } else if (e.deltaY < -30 && currentSpread > 0) {
+        e.preventDefault();
+        if (now - lastWheelTime.current > 520 && !animatingDir) {
+          lastWheelTime.current = now;
+          turnSpread('prev');
+        }
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [isEmbedded, currentSpread, animatingDir]);
 
   // Fetch compiled daily edition
   useEffect(() => {
@@ -175,7 +206,13 @@ export function FiniteBroadsheet() {
   // Keyboard navigation
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === ' ') {
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+      if (e.key === 'ArrowRight' || (!isEmbedded && e.key === ' ')) {
         e.preventDefault();
         turnSpread('next');
       } else if (e.key === 'ArrowLeft') {
@@ -185,7 +222,7 @@ export function FiniteBroadsheet() {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [currentSpread, animatingDir]);
+  }, [currentSpread, animatingDir, isEmbedded]);
 
   // Touch / Swipe support
   useEffect(() => {
@@ -318,7 +355,13 @@ export function FiniteBroadsheet() {
   const p = edition?.pages;
 
   return (
-    <div className="studio-desk-surface w-screen h-screen flex flex-col justify-between overflow-hidden select-none">
+    <div
+      className={
+        isEmbedded
+          ? "studio-desk-surface w-full min-h-[660px] lg:min-h-[750px] flex flex-col justify-between items-center relative overflow-hidden select-none rounded-2xl border border-[#2b241c]/40 shadow-2xl my-6 py-2"
+          : "studio-desk-surface w-screen h-screen flex flex-col justify-between overflow-hidden select-none"
+      }
+    >
       {/* Top Header Bar */}
       <header className="desk-header px-6 py-2.5 flex items-center justify-between border-b border-white/10 z-30">
         <div className="flex items-center gap-3">
