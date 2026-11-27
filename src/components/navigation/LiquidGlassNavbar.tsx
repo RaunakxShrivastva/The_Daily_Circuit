@@ -12,6 +12,12 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentTime, setCurrentTime] = useState("");
+  const [readerState, setReaderState] = useState<{
+    open: boolean;
+    tabs: { id: string; label: string }[];
+    activeTab: string;
+    sourceUrl: string | null;
+  }>({ open: false, tabs: [], activeTab: "article", sourceUrl: null });
 
   const notchRef = useRef<HTMLElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -170,9 +176,34 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     return () => cancelAnimationFrame(animId);
   }, [buildNotchPath, EAR, RADIUS]);
 
+  // Sync StoryReader inside the unified MacBook Notch
+  useEffect(() => {
+    const handleReaderState = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.open) {
+        setReaderState(detail);
+        setActiveState("idle");
+        const w = typeof window !== "undefined" ? Math.min(820, window.innerWidth - 56) : 760;
+        targetRef.current = { w: Math.max(460, w), h: 48 };
+      } else {
+        setReaderState((prev) => ({ ...prev, open: false }));
+        if (typeof window !== "undefined" && window.scrollY > 30) {
+          setActiveState("idle");
+          targetRef.current = { ...STATES.idle };
+        } else {
+          setActiveState("collapsed");
+          targetRef.current = { ...STATES.collapsed };
+        }
+      }
+    };
+    window.addEventListener("daily-circuit:reader-state", handleReaderState);
+    return () => window.removeEventListener("daily-circuit:reader-state", handleReaderState);
+  }, []);
+
   // 6. Scroll Tracking: At top -> Collapsed Notch; When scrolled -> Expands into Notch Navbar
   useEffect(() => {
     const handleScroll = () => {
+      if (readerState.open) return;
       const scrollY = window.scrollY;
 
       if (scrollY > 30) {
@@ -378,6 +409,65 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
             /* STATE B: EXPANDED NOTCH (Home, 3D Mode, Search, Audio)   */
             /* ======================================================== */
             <div className="notch-content">
+              {readerState.open ? (
+                <div className="notch-top-row" style={{ gap: "10px" }}>
+                  <span className="notch-brand shrink-0">
+                    <span className="notch-dot" />
+                    <span className="hidden sm:inline">CIRCUIT</span>
+                  </span>
+
+                  <div className="notch-links" style={{ gap: "2px", overflowX: "auto", scrollbarWidth: "none" }}>
+                    {readerState.tabs.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.dispatchEvent(
+                            new CustomEvent("daily-circuit:reader-tab", { detail: t.id })
+                          );
+                        }}
+                        className={`notch-link cursor-pointer whitespace-nowrap ${readerState.activeTab === t.id ? "active" : ""}`}
+                        style={{ padding: "4px 9px", fontSize: "11px" }}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="notch-actions shrink-0">
+                    {readerState.sourceUrl && (
+                      <a
+                        href={readerState.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="notch-btn cursor-pointer no-underline"
+                        style={{ textDecoration: "none" }}
+                        title="Open original source"
+                      >
+                        Source ↗
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.dispatchEvent(new CustomEvent("daily-circuit:reader-close"));
+                      }}
+                      className="notch-btn cursor-pointer"
+                      style={{
+                        background: "rgba(255, 69, 58, 0.22)",
+                        borderColor: "rgba(255, 69, 58, 0.55)",
+                        color: "#fff",
+                      }}
+                    >
+                      Close ✕
+                    </button>
+                  </div>
+                </div>
+              ) : (
+              <>
               <div className="notch-top-row">
                 <button
                   type="button"
@@ -479,6 +569,8 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
                   </div>
                 </div>
               </div>
+              </>
+              )}
             </div>
           )}
         </div>
@@ -512,7 +604,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
             rgba(22, 22, 26, 0.78) 0%,
             rgba(16, 16, 20, 0.62) 100%
           );
-          backdrop-filter: url(#liquid-glass-refract) blur(24px) saturate(190%);
+          backdrop-filter: url(#liquid-glass-refract) blur(12px) saturate(160%);
           -webkit-backdrop-filter: blur(24px) saturate(190%);
           box-shadow:
             inset 0 -1px 1px rgba(255, 255, 255, 0.28),

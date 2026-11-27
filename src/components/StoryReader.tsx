@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Story } from '../data/types';
 import { EvidenceDesk, Timeline, AskThisStory, Narration } from './Desk';
 import { findStoryVideo } from '../lib/youtube';
@@ -20,6 +20,38 @@ export function StoryReader({ story, onClose }: { story: Story; onClose: () => v
   const videoSrc = findStoryVideo(story.url ?? '', story.body);
   const visibleTabs = TABS.filter(t => t.id !== 'video' || !!videoSrc);
 
+  // Sync StoryReader controls directly into the top LiquidGlassNavbar Notch (single unified navbar)
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('daily-circuit:reader-state', {
+        detail: {
+          open: true,
+          tabs: visibleTabs.map((t) => ({ id: t.id, label: t.label })),
+          activeTab: tab,
+          sourceUrl: story.url || null,
+        },
+      })
+    );
+  }, [tab, story.url, visibleTabs.length]);
+
+  useEffect(() => {
+    const onTabCmd = (e: Event) => {
+      const next = (e as CustomEvent<TabId>).detail;
+      if (next) setTab(next);
+    };
+    const onCloseCmd = () => onClose();
+
+    window.addEventListener('daily-circuit:reader-tab', onTabCmd);
+    window.addEventListener('daily-circuit:reader-close', onCloseCmd);
+    return () => {
+      window.removeEventListener('daily-circuit:reader-tab', onTabCmd);
+      window.removeEventListener('daily-circuit:reader-close', onCloseCmd);
+      window.dispatchEvent(
+        new CustomEvent('daily-circuit:reader-state', { detail: { open: false } })
+      );
+    };
+  }, [onClose]);
+
   return (
     <div
       className="reader-overlay"
@@ -29,41 +61,8 @@ export function StoryReader({ story, onClose }: { story: Story; onClose: () => v
       aria-label={`Reading: ${story.headline}`}
     >
       <article className="reader" onKeyDown={e => { if (e.key === 'Escape') onClose(); }}>
-        {/* Top bar */}
-        <div className="reader__bar">
-          <span className="reader__brand">The Daily Circuit</span>
-          <nav className="reader__tabs" role="tablist" aria-label="Story tools">
-            {visibleTabs.map(t => (
-              <button
-                key={t.id}
-                className="reader__tab"
-                data-on={tab === t.id}
-                role="tab"
-                aria-selected={tab === t.id}
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </nav>
-          <div className="reader__bar-actions">
-            {story.url && (
-              <a
-                className="reader__source-btn"
-                href={story.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Open original source"
-              >
-                Source ↗
-              </a>
-            )}
-            <button className="reader__close" onClick={onClose}>Close ✕</button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="reader__body">
+        {/* Body (Top bar is unified inside the MacBook Liquid Glass Notch above) */}
+        <div className="reader__body" style={{ paddingTop: '72px' }}>
           <div className="reader__sheet">
             {tab === 'article' && (
               <>
