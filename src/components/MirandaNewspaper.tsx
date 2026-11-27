@@ -486,16 +486,18 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
         </div>
       )}
 
-      {/* Top Full-Screen Home Page Stage with Botanical Impressionist Garden Background */}
-      <HomePageStage 
-        onScrollToNewspaper={() => {
-          const homeHeight = window.innerHeight || 850;
-          window.scrollTo({ top: homeHeight * 0.45 + 1650, behavior: 'smooth' });
-        }} 
-      />
+      {/* Top Full-Screen Home Page Stage with Botanical Impressionist Garden Background (2D Mode only) */}
+      {viewMode !== '3d' && (
+        <HomePageStage 
+          onScrollToNewspaper={() => {
+            const homeHeight = window.innerHeight || 850;
+            window.scrollTo({ top: homeHeight * 0.45 + 1650, behavior: 'smooth' });
+          }} 
+        />
+      )}
 
-      {/* Real-time Smooth Scroll SVG Circuit Path Draw Animation */}
-      <ScrollCircuitPath />
+      {/* Real-time Smooth Scroll SVG Circuit Path Draw Animation (2D Mode only) */}
+      {viewMode !== '3d' && <ScrollCircuitPath />}
 
       {/* Floating Outside-Paper Page Rail (Sticky Page Markers - Only visible when reading newspaper in 2D mode) */}
       {viewMode !== '3d' && (
