@@ -468,35 +468,44 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
       {/* Real-time Smooth Scroll SVG Circuit Path Draw Animation */}
       <ScrollCircuitPath />
 
-      {/* Floating Outside-Paper Page Rail (Sticky Page Markers - Only visible when reading newspaper) */}
-      <aside 
-        className={`miranda-page-rail transition-all duration-300 ${showPageRail ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 -translate-x-4 pointer-events-none'}`} 
-        aria-label="Broadsheet Page Index"
-      >
-        <div className="miranda-page-rail__heading">
-          <Layers size={10} />
-          <span>PAGES</span>
-        </div>
-        {PAGE_SECTIONS.map((sec) => (
-          <button
-            key={sec.id}
-            onClick={() => scrollToSection(sec.id)}
-            className={`miranda-page-rail__btn ${activeSection === sec.id ? 'is-active' : ''}`}
-            title={`Scroll to Page ${sec.num}: ${sec.label}`}
-          >
-            <span className="miranda-page-rail__num">{sec.num}</span>
-            <span className="miranda-page-rail__title">{sec.short}</span>
-          </button>
-        ))}
-      </aside>
+      {/* Floating Outside-Paper Page Rail (Sticky Page Markers - Only visible when reading newspaper in 2D mode) */}
+      {viewMode !== '3d' && (
+        <aside 
+          className={`miranda-page-rail transition-all duration-300 ${showPageRail ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 -translate-x-4 pointer-events-none'}`} 
+          aria-label="Broadsheet Page Index"
+        >
+          <div className="miranda-page-rail__heading">
+            <Layers size={10} />
+            <span>PAGES</span>
+          </div>
+          {PAGE_SECTIONS.map((sec) => (
+            <button
+              key={sec.id}
+              onClick={() => scrollToSection(sec.id)}
+              className={`miranda-page-rail__btn ${activeSection === sec.id ? 'is-active' : ''}`}
+              title={`Scroll to Page ${sec.num}: ${sec.label}`}
+            >
+              <span className="miranda-page-rail__num">{sec.num}</span>
+              <span className="miranda-page-rail__title">{sec.short}</span>
+            </button>
+          ))}
+        </aside>
+      )}
 
-      {/* Docked Stageshow Mobile Companion Audio Satellite (Collapsible on the right margin) */}
-      <MobileSatelliteStage />
+      {/* Docked Stageshow Mobile Companion Audio Satellite (Collapsible on the right margin in 2D mode) */}
+      {viewMode !== '3d' && <MobileSatelliteStage />}
 
-      {/* 3D Physical Manuscript Unroll Wrapper on Second Page */}
-      <div className="relative max-w-[1260px] mx-auto mt-16 sm:mt-24">
-        {/* The 3D Rolling Cylinder and Wax Seal that moves down as you scroll (in 2D mode) */}
-        {viewMode !== '3d' && (
+      {/* =========================================================================
+          VIEW MODE SWITCH:
+          - In 3D Mode: PURE 3D FLIP BOOK ONLY (No beige paper sheet, no masthead, no tabs!)
+          - In 2D Mode: Full Miranda Physical Printed Broadsheet (Continuous scroll)
+          ========================================================================= */}
+      {viewMode === '3d' ? (
+        <section id="broadsheet-3d-section" className="w-full min-h-screen relative z-10 flex flex-col items-center justify-center py-4">
+          <FiniteBroadsheet isEmbedded={true} />
+        </section>
+      ) : (
+        <div className="relative max-w-[1260px] mx-auto mt-16 sm:mt-24">
           <WaxSealManuscriptUnroll 
             scrollProgress={unrollProgress}
             maxRollTravel={maxRollTravel}
@@ -505,21 +514,20 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
               window.scrollTo({ top: homeHeight * 0.45 + 1650, behavior: 'smooth' });
             }}
           />
-        )}
 
-        {/* Main Printed Broadsheet Container with 3D Perspective Unroll & Optical Blur Resolve */}
-        <main 
-          className="miranda-sheet transition-all duration-75 will-change-transform"
-          data-perch="true"
-          data-mascot-note="Edition #143 Broadsheet. Continuous 8-page infinite signal feed."
-          style={{
-            clipPath: viewMode !== '3d' && unrollProgress < 0.98 ? `inset(0 0 calc(100% - ${revealedHeight + 24}px) 0)` : undefined,
-            filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
-            transform: viewMode !== '3d' ? `perspective(1400px) rotateX(${((1 - unrollProgress) * -10).toFixed(2)}deg) scale(${paperScale.toFixed(3)})` : undefined,
-            transformOrigin: 'top center',
-            opacity: viewMode !== '3d' && unrollProgress < 0.04 ? 0 : paperOpacity,
-          }}
-        >
+          {/* Main Printed Broadsheet Container with 3D Perspective Unroll & Optical Blur Resolve */}
+          <main 
+            className="miranda-sheet transition-all duration-75 will-change-transform"
+            data-perch="true"
+            data-mascot-note="Edition #143 Broadsheet. Continuous 8-page infinite signal feed."
+            style={{
+              clipPath: unrollProgress < 0.98 ? `inset(0 0 calc(100% - ${revealedHeight + 24}px) 0)` : undefined,
+              filter: paperBlur > 0.4 ? `blur(${paperBlur.toFixed(1)}px)` : undefined,
+              transform: `perspective(1400px) rotateX(${((1 - unrollProgress) * -10).toFixed(2)}deg) scale(${paperScale.toFixed(3)})`,
+              transformOrigin: 'top center',
+              opacity: unrollProgress < 0.04 ? 0 : paperOpacity,
+            }}
+          >
         {/* Glowing Copper PCB Reading Spine on the left paper edge */}
         <div 
           className="hidden xl:block absolute left-0 top-0 bottom-0 w-[3px] pointer-events-none rounded-l-sm"
@@ -598,29 +606,9 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
         </nav>
 
         {/* ========================================================
-            3D TACTILE BROADSHEET (EMBEDDED FLIP BOOK) OR 2D SECTIONS
+            PAGE 01: FRONT PAGE & BREAKING WIRE
             ======================================================== */}
-        {viewMode === '3d' ? (
-          <div className="w-full my-6 flex flex-col items-center">
-            <div className="w-full max-w-5xl mb-4 flex items-center justify-between px-4 py-2.5 rounded-xl bg-[#231e17]/85 border border-[#433728]/70 text-xs font-mono text-amber-200 shadow-lg">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-semibold uppercase tracking-wider text-amber-100">
-                  3D Paper-Turn Broadsheet Active
-                </span>
-              </div>
-              <div className="text-[11px] text-[#e8ded1]/80">
-                Scroll on paper or drag corners to turn (Pages 1–8) · Scroll further down for MacBook
-              </div>
-            </div>
-            <FiniteBroadsheet isEmbedded={true} />
-          </div>
-        ) : (
-          <>
-            {/* ========================================================
-                PAGE 01: FRONT PAGE & BREAKING WIRE
-                ======================================================== */}
-            <section id="page-01" className="miranda-page-section">
+        <section id="page-01" className="miranda-page-section">
           <div className="miranda-page-edge-tag">PAGE 01 · FRONT WIRE</div>
           <div className="miranda-front-grid">
             {/* Left Big Lead Story */}
@@ -1370,31 +1358,16 @@ export function MirandaNewspaper({ viewMode = 'miranda' }: { viewMode?: '3d' | '
             </table>
           </div>
         </section>
-        </>
-        )}
-
-        {/* ========================================================
-            PAGE 08: MORNING TELEGRAPH & SUBSCRIPTION
-            ======================================================== */}
-        <div className="miranda-folio-divider">
-          <span>THE DAILY CIRCUIT · VOL. XXIV</span>
-          <div className="miranda-folio-divider__center">
-            <span className="miranda-folio-divider__pill">PAGE 08</span>
-            <span>MORNING TELEGRAPH &amp; PRINT SUBSCRIPTION</span>
-          </div>
-          <span>SECTION H · CIRCULATION DESK</span>
-        </div>
-
-        <section id="page-08" className="miranda-page-section overflow-visible">
-          <div className="miranda-page-edge-tag">PAGE 08 · PRINT &amp; TELEGRAPH</div>
-          
-          {/* Replaced old beige subscribe box with modern Apple Studio Liquid Glass + Mechanical Keyboard */}
-          <div className="w-full my-2">
-            <MacbookScrollDemo />
-          </div>
-        </section>
       </main>
       </div>
+      )}
+
+      {/* ========================================================
+          PAGE 08: MORNING TELEGRAPH & SUBSCRIPTION (MACBOOK)
+          ======================================================== */}
+      <section id="page-08" className="w-full min-h-screen flex flex-col items-center justify-center relative z-10 py-12">
+        <MacbookScrollDemo />
+      </section>
 
       {/* Two Full-Screen Pages at the End of the Broadsheet:
           Page 1: Zero Infinite Feeds Curtain Sign-Off (Full-Screen Page)

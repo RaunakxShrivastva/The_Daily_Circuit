@@ -109,6 +109,7 @@ export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean 
   const [isStamped, setIsStamped] = useState(false);
   const [countdown, setCountdown] = useState('--:--:--');
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const deskStageRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -120,20 +121,20 @@ export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean 
   // When at the first spread (spread 0), upward scroll flows back up to HomePage!
   useEffect(() => {
     if (!isEmbedded) return;
-    const el = deskStageRef.current;
+    const el = containerRef.current || deskStageRef.current;
     if (!el) return;
 
     const onWheel = (e: WheelEvent) => {
       const now = Date.now();
-      if (e.deltaY > 30 && currentSpread < TOTAL_SPREADS - 1) {
+      if (e.deltaY > 25 && currentSpread < TOTAL_SPREADS - 1) {
         e.preventDefault();
-        if (now - lastWheelTime.current > 520 && !animatingDir) {
+        if (now - lastWheelTime.current > 500 && !animatingDir) {
           lastWheelTime.current = now;
           turnSpread('next');
         }
-      } else if (e.deltaY < -30 && currentSpread > 0) {
+      } else if (e.deltaY < -25 && currentSpread > 0) {
         e.preventDefault();
-        if (now - lastWheelTime.current > 520 && !animatingDir) {
+        if (now - lastWheelTime.current > 500 && !animatingDir) {
           lastWheelTime.current = now;
           turnSpread('prev');
         }
@@ -356,9 +357,10 @@ export function FiniteBroadsheet({ isEmbedded = false }: { isEmbedded?: boolean 
 
   return (
     <div
+      ref={containerRef}
       className={
         isEmbedded
-          ? "studio-desk-surface w-full min-h-[660px] lg:min-h-[750px] flex flex-col justify-between items-center relative overflow-hidden select-none rounded-2xl border border-[#2b241c]/40 shadow-2xl my-6 py-2"
+          ? "studio-desk-surface w-full min-h-screen py-6 flex flex-col justify-between items-center relative overflow-hidden select-none"
           : "studio-desk-surface w-screen h-screen flex flex-col justify-between overflow-hidden select-none"
       }
     >
