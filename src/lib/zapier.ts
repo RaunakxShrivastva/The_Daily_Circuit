@@ -1,4 +1,4 @@
-export interface ZapierSubscribePayload {
+export interface SubscribePayload {
   email: string;
   source?: string;
   edition?: string;
@@ -6,24 +6,32 @@ export interface ZapierSubscribePayload {
   signalRatio?: string;
 }
 
-export interface ZapierResponse {
+export interface SubscribeResponse {
   success: boolean;
   message: string;
-  deliveredToZapier: boolean;
+  delivered: boolean;
 }
 
+/**
+ * Universal Newsletter Dispatcher:
+ * Supports 100% Free Google Sheets & Gmail (via Google Apps Script Web App)
+ * and Zapier Free Tier (New Spreadsheet Row -> Gmail).
+ */
 export async function sendZapierSubscribe(
-  payload: ZapierSubscribePayload
-): Promise<ZapierResponse> {
-  const webhookUrl =
+  payload: SubscribePayload
+): Promise<SubscribeResponse> {
+  // Read endpoint URL from .env or localStorage (supports Google Apps Script Web App or Zapier)
+  const endpointUrl =
+    import.meta.env.VITE_GOOGLE_SHEET_URL ||
+    import.meta.env.VITE_NEWSLETTER_ENDPOINT ||
     import.meta.env.VITE_ZAPIER_WEBHOOK_URL ||
     (typeof window !== "undefined"
-      ? localStorage.getItem("tdc_zapier_webhook_url")
+      ? localStorage.getItem("tdc_sheet_url") || localStorage.getItem("tdc_zapier_webhook_url")
       : null);
 
   const fullData = {
     email: payload.email,
-    source: payload.source || "The Daily Circuit MacBook Deck",
+    source: payload.source || "MacBook Pro Telegraph Screen",
     edition: payload.edition || "Issue #142 (Vol. XXIV)",
     timestamp: payload.timestamp || new Date().toISOString(),
     signalRatio: payload.signalRatio || "96.8%",
@@ -36,42 +44,42 @@ export async function sendZapierSubscribe(
     localStorage.setItem("tdc_subscribed_email", payload.email);
   } catch (_) {}
 
-  if (!webhookUrl) {
+  if (!endpointUrl) {
     console.info(
-      "[Zapier AI] No webhook URL configured yet. Stored email locally:",
+      "[Newsletter] No endpoint configured yet. Email stored locally:",
       payload.email
     );
     return {
       success: true,
-      deliveredToZapier: false,
+      delivered: false,
       message:
-        "Subscribed! (Connect your Zapier Webhook URL in .env to deliver live emails instantly)",
+        "Subscribed! Connect Google Sheet URL in .env to deliver instant emails 100% free.",
     };
   }
 
   try {
-    // Send to Zapier Webhook Catch Hook endpoint
-    await fetch(webhookUrl, {
+    // Send to Google Sheet Apps Script Web App / Zapier endpoint
+    await fetch(endpointUrl, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "text/plain;charset=utf-8", // text/plain prevents CORS preflight issues with Google Apps Script
       },
       body: JSON.stringify(fullData),
-      mode: "no-cors", // Ensures client-side calls to hooks.zapier.com never get blocked by browser CORS
+      mode: "no-cors", // Guarantees browser never blocks the request
     });
 
-    console.info("[Zapier AI] Successfully transmitted subscriber to Zapier:", payload.email);
+    console.info("[Newsletter] Successfully transmitted subscriber to Google Sheet / Zapier:", payload.email);
     return {
       success: true,
-      deliveredToZapier: true,
-      message: "Telegraph dispatched! Welcome email sent via Zapier AI.",
+      delivered: true,
+      message: "Telegraph dispatched! Welcome email sent to your inbox.",
     };
   } catch (err: any) {
-    console.error("[Zapier AI Error]", err);
+    console.error("[Newsletter Error]", err);
     return {
       success: false,
-      deliveredToZapier: false,
-      message: err.message || "Failed to transmit to Zapier.",
+      delivered: false,
+      message: err.message || "Failed to transmit subscription.",
     };
   }
 }

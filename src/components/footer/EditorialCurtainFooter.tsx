@@ -535,7 +535,7 @@ export function EditorialCurtainFooter() {
       email,
       source: "Editorial Curtain Footer",
     });
-    showToast(res.deliveredToZapier ? "✓ Dispatched! Welcome email sent via Zapier AI" : "Morning Wire confirmed for 06:00 IST");
+    showToast(res.delivered ? "✓ Dispatched! Welcome email sent to your inbox" : "Morning Wire confirmed for 06:00 IST");
   };
 
   return (
