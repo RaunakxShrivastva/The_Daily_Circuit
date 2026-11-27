@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { MacbookScroll } from "./ui/macbook-scroll";
-import { AppleEndingPage } from "./AppleEndingPage";
+import { LiquidGlassScreen } from "./LiquidGlassScreen";
 import { Keyboard } from "./ui/keyboard";
 import { Volume2, Mail, CheckCircle2, Sparkles, Terminal } from "lucide-react";
 import confetti from "canvas-confetti";
@@ -19,7 +19,7 @@ export function MacbookScrollDemo() {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
       setTimeout(() => {
         keyboardInputRef.current?.focus();
-      }, 500);
+      }, 400);
     }
   };
 
@@ -31,8 +31,8 @@ export function MacbookScrollDemo() {
       localStorage.setItem("tdc_subscribed_email", email);
     } catch (_) {}
     confetti({
-      particleCount: 70,
-      spread: 80,
+      particleCount: 75,
+      spread: 85,
       origin: { y: 0.8 },
       colors: ["#10b981", "#34d399", "#6ee7b7", "#ffffff"],
     });
@@ -64,10 +64,10 @@ export function MacbookScrollDemo() {
 
   return (
     <div className="w-full flex flex-col items-center bg-transparent">
-      {/* 1. 3D Scrolling MacBook with Apple Ending Page Screen */}
+      {/* 1. 3D Scrolling MacBook — Opens and scales the Minimal Liquid Glass Website as user scrolls */}
       <div className="w-full overflow-hidden bg-transparent">
         <MacbookScroll showGradient={false}>
-          <AppleEndingPage
+          <LiquidGlassScreen
             email={email}
             setEmail={setEmail}
             subscribed={subscribed}
@@ -80,11 +80,19 @@ export function MacbookScrollDemo() {
       {/* 2. SEPARATE MECHANICAL KEYBOARD SECTION DIRECTLY UNDERNEATH */}
       <section
         id="mechanical-keyboard-section"
-        className="w-full max-w-5xl mx-auto my-12 px-4 sm:px-6 relative z-20"
+        className="w-full max-w-5xl mx-auto my-16 px-4 sm:px-6 relative z-20"
       >
-        <div className="relative rounded-3xl bg-[#0b0b10]/95 border border-white/15 p-6 sm:p-10 shadow-[0_30px_90px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden">
-          {/* Subtle ambient lighting */}
+        <div 
+          className="relative rounded-3xl p-6 sm:p-10 backdrop-blur-2xl overflow-hidden"
+          style={{
+            background: "rgba(13, 13, 18, 0.82)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            boxShadow: "0 30px 80px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+          }}
+        >
+          {/* Liquid Glass ambient lighting */}
           <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-gradient-to-b from-emerald-500/15 via-blue-500/10 to-transparent blur-3xl rounded-full" />
+          <div className="pointer-events-none absolute -bottom-24 right-10 w-80 h-48 bg-gradient-to-t from-teal-500/10 to-transparent blur-3xl rounded-full" />
 
           {/* Section Header */}
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-4 mb-6">
@@ -95,28 +103,28 @@ export function MacbookScrollDemo() {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
                 <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 uppercase">
-                  Telegraph Mechanical Keyboard Engine
+                  Telegraph Mechanical Keyboard Studio
                 </span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                <span>Interactive Hardware Studio</span>
-                <Sparkles className="w-5 h-5 text-amber-400" />
+                <span>Tactile Sound &amp; Live Keystroke Deck</span>
+                <Sparkles className="w-5 h-5 text-emerald-400" />
               </h3>
               <p className="text-xs text-zinc-400 mt-1 max-w-lg">
-                Type directly on your computer keyboard or click the mechanical switches below. 
-                Full tactile sound effects &amp; spring-keystroke preview active.
+                Type directly on your physical computer keyboard or click the switches below. 
+                Full tactile mechanical click sound &amp; floating keystroke preview active.
               </p>
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs font-mono text-emerald-300">
                 <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Audio Active (Cherry MX)</span>
+                <span>Audio Active (Cherry MX Thock)</span>
               </div>
             </div>
           </div>
 
-          {/* Live Synchronized Email Input Bar with Glowing Focus */}
+          {/* Live Synchronized Email Input Bar with Glowing Liquid Glass Focus */}
           <div className="relative z-10 max-w-2xl mx-auto mb-6">
             {subscribed ? (
               <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono text-xs sm:text-sm shadow-lg">
@@ -135,13 +143,13 @@ export function MacbookScrollDemo() {
                   <input
                     ref={keyboardInputRef}
                     type="email"
-                    placeholder="Type email address or use keyboard below..."
+                    placeholder="Type email address here or use keyboard below..."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="off"
                     data-1p-ignore="true"
                     data-lpignore="true"
-                    name="telegraph_address"
+                    name="telegraph_address_keyboard"
                     required
                     className="w-full bg-black/80 border border-white/20 hover:border-emerald-500/60 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 font-mono transition-all shadow-inner"
                   />
@@ -157,14 +165,14 @@ export function MacbookScrollDemo() {
             )}
           </div>
 
-          {/* Aceternity Interactive Mechanical Keyboard (Full Size, Un-chopped, Dedicated Studio) */}
+          {/* Aceternity Interactive Mechanical Keyboard (Full Size, Centered, Never Chopped) */}
           <div className="relative z-10 w-full overflow-x-auto py-4 flex flex-col items-center justify-center">
             <div className="min-w-fit px-2">
               <Keyboard
                 enableSound={true}
                 showPreview={true}
                 onKeyInput={handleVirtualKeyInput}
-                className="my-4"
+                className="my-3"
               />
             </div>
           </div>
