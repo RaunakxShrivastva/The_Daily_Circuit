@@ -111,15 +111,21 @@ export function LiquidGlassScreen({
                     <Mail className="w-3.5 h-3.5" />
                   </div>
                   <input
-                    type="email"
+                    type="text"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="off"
+                    data-1p-ignore="true"
+                    data-lpignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
                     placeholder="Enter email to automate delivery..."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onClick={handleInputClick}
-                    autoComplete="off"
-                    data-1p-ignore="true"
-                    data-lpignore="true"
-                    name="telegraph_address_screen"
+                    name="telegraph_dispatch_addr"
                     required
                     className="w-full bg-transparent border-none text-white text-[11px] placeholder-zinc-400 focus:outline-none font-mono"
                   />

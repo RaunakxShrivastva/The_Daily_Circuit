@@ -1,52 +1,26 @@
-import React, { useState, useEffect, useRef } from "react";
-import { MacbookScroll } from "./ui/macbook-scroll";
+import React, { useState, useEffect } from "react";
 import { LiquidGlassScreen } from "./LiquidGlassScreen";
 import { Keyboard } from "./ui/keyboard";
-import { X, Volume2 } from "lucide-react";
+import { Volume2, Sparkles } from "lucide-react";
 import confetti from "canvas-confetti";
 
 export function MacbookScrollDemo() {
   const [email, setEmail] = useState("");
-  const [showKeyboard, setShowKeyboard] = useState(false);
   const [subscribed, setSubscribed] = useState(() => {
     return typeof window !== "undefined" ? !!localStorage.getItem("tdc_subscribed_email") : false;
   });
-
-  const keyboardRef = useRef<HTMLDivElement>(null);
-
-  // Close keyboard on Escape key
-  useEffect(() => {
-    if (!showKeyboard) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowKeyboard(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showKeyboard]);
-
-  // Smoothly reveal keyboard when user clicks email
-  useEffect(() => {
-    if (showKeyboard) {
-      setTimeout(() => {
-        keyboardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 150);
-    }
-  }, [showKeyboard]);
 
   const handleSubscribe = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!email || !email.includes("@")) return;
     setSubscribed(true);
-    setShowKeyboard(false);
     try {
       localStorage.setItem("tdc_subscribed_email", email);
     } catch (_) {}
     confetti({
-      particleCount: 75,
-      spread: 85,
-      origin: { y: 0.8 },
+      particleCount: 80,
+      spread: 90,
+      origin: { y: 0.75 },
       colors: ["#10b981", "#34d399", "#6ee7b7", "#ffffff"],
     });
   };
@@ -61,8 +35,6 @@ export function MacbookScrollDemo() {
       if (email && email.includes("@")) {
         handleSubscribe();
       }
-    } else if (keyCode === "Escape") {
-      setShowKeyboard(false);
     } else if (keyCode === "Period") {
       setEmail((prev) => prev + ".");
     } else if (keyCode.startsWith("Key")) {
@@ -72,66 +44,76 @@ export function MacbookScrollDemo() {
       setEmail((prev) => prev + keyCode.slice(5));
     } else if (keyCode === "Minus") {
       setEmail((prev) => prev + "-");
-    } else if (char && char.length === 1 && /[a-zA-Z0-9@._-]/.test(char)) {
+    } else if (char && char.length === 1 && /[a-zA-Z0-9@._\-]/.test(char)) {
       setEmail((prev) => prev + char.toLowerCase());
     }
   };
 
+  // Listen for physical keyboard typing anywhere in section
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // If typing inside native input or textarea, let native change handler handle it
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      if (e.key === "Backspace") {
+        setEmail((prev) => prev.slice(0, -1));
+      } else if (e.key === "Enter") {
+        if (email && email.includes("@")) {
+          handleSubscribe();
+        }
+      } else if (e.key === " ") {
+        e.preventDefault();
+        setEmail((prev) => prev + " ");
+      } else if (e.key.length === 1 && /[a-zA-Z0-9@._\-\+]/.test(e.key)) {
+        setEmail((prev) => prev + e.key.toLowerCase());
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [email]);
+
   return (
-    <div className="w-full flex flex-col items-center bg-transparent">
-      {/* 1. 3D Scrolling MacBook with Minimal Liquid Glass Website */}
-      <div className="w-full overflow-hidden bg-transparent">
-        <MacbookScroll showGradient={false}>
-          <LiquidGlassScreen
-            email={email}
-            setEmail={setEmail}
-            subscribed={subscribed}
-            setSubscribed={setSubscribed}
-            onFocusEmail={() => setShowKeyboard(true)}
-          />
-        </MacbookScroll>
+    <div className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center py-6 sm:py-8 px-4">
+      {/* 1. Apple Liquid Glass Display Screen (Motion CloudShader background + macOS controls) */}
+      <div className="w-full max-w-3xl h-[330px] sm:h-[370px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] border border-white/20 relative backdrop-blur-md">
+        <LiquidGlassScreen
+          email={email}
+          setEmail={setEmail}
+          subscribed={subscribed}
+          setSubscribed={setSubscribed}
+        />
       </div>
 
-      {/* 2. Standalone Mechanical Keyboard (Appears when clicking email — NO extra card/page background) */}
-      {showKeyboard && (
-        <div
-          ref={keyboardRef}
-          className="w-full max-w-4xl mx-auto my-8 px-4 flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom duration-300 relative z-20"
-        >
-          {/* Subtle minimal controls bar */}
-          <div className="flex items-center justify-between w-full max-w-2xl px-2 mb-2 text-xs font-mono text-zinc-400">
-            <div className="flex items-center gap-1.5 text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <Volume2 className="w-3.5 h-3.5" />
-              <span>Mechanical Audio Active (Cherry MX)</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowKeyboard(false)}
-              className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-[11px] text-zinc-300 transition-colors cursor-pointer flex items-center gap-1"
-            >
-              <span>Close (Esc)</span>
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-
-          {/* Aceternity Pure Mechanical Keyboard (Completely clean, no container background) */}
-          <div className="w-full overflow-x-auto py-2 flex flex-col items-center justify-center">
-            <div className="min-w-fit px-2">
-              <Keyboard
-                enableSound={true}
-                showPreview={true}
-                onKeyInput={handleVirtualKeyInput}
-                className="my-2"
-              />
-            </div>
-          </div>
-
-          <div className="text-[10px] font-mono text-zinc-500 mt-2">
-            ⌨️ Type on your physical keyboard or tap keys above · Press Enter to submit
-          </div>
+      {/* 2. Sleek Status Strip (No gap, unified bridge) */}
+      <div className="flex items-center justify-between w-full max-w-2xl px-2 mt-4 sm:mt-5 mb-2 text-xs font-mono text-zinc-400">
+        <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <Volume2 className="w-3.5 h-3.5" />
+          <span>Mechanical Audio Active (Cherry MX Thock)</span>
         </div>
-      )}
+        <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+          <Sparkles className="w-3 h-3 text-emerald-400" />
+          <span>Type on keyboard or click keys below</span>
+        </div>
+      </div>
+
+      {/* 3. Aceternity Pure Mechanical Keyboard (Always together on screen with display!) */}
+      <div className="w-full overflow-x-auto py-1 flex flex-col items-center justify-center">
+        <div className="min-w-fit px-2">
+          <Keyboard
+            enableSound={true}
+            showPreview={true}
+            onKeyInput={handleVirtualKeyInput}
+            className="my-1 shadow-2xl rounded-2xl border border-white/10"
+          />
+        </div>
+      </div>
     </div>
   );
 }
