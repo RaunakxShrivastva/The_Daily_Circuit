@@ -524,6 +524,44 @@ export const InkyMascot: React.FC<InkyMascotProps> = ({
     return () => window.removeEventListener("daily-circuit:assembly-complete", onAssemblyComplete);
   }, [playChirp, say]);
 
+  // Feature: Botpress Chatbot Interaction (Inky rushes over, peeks in, and gives advice/suggestions)
+  useEffect(() => {
+    let lastTrigger = 0;
+
+    const handleChatOpen = () => {
+      if (Date.now() - lastTrigger < 3500) return;
+      lastTrigger = Date.now();
+
+      const p = phys.current;
+      // Inky rushes over to the bottom-right corner near the Botpress chat window
+      p.x = Math.max(40, window.innerWidth - 440);
+      p.y = window.innerHeight - 135;
+      p.vx = 0;
+      p.vy = -7.5; // energetic hop!
+      p.facing = 1; // turn towards the chat
+      p.scaleX = 0.82;
+      p.scaleY = 1.28;
+      p.state = "JUMPING";
+
+      playChirp(680, 960, 0.14, "triangle", 0.09);
+
+      const suggestions = [
+        "🗞️ Oho! Checking today's intelligence with me? Ask me about the 501B Beam model!",
+        "👀 Peeking in! Ask me: 'Summarize today's lead story in 3 points'!",
+        "💡 Tip: Ask me how our weekly printed physical broadsheet in postal tube works!",
+        "⚡ The newsroom wire is live! Ask me anything about GPU weather or Arxiv breakthroughs!",
+        "✍️ I'm right here with you! Click one of the prompt pills or type your question!"
+      ];
+      const note = suggestions[Math.floor(Math.random() * suggestions.length)];
+      setTimeout(() => {
+        say(note, 6500);
+      }, 300);
+    };
+
+    window.addEventListener("daily-circuit:chat-opened", handleChatOpen);
+    return () => window.removeEventListener("daily-circuit:chat-opened", handleChatOpen);
+  }, [playChirp, say]);
+
   // Feature 1: Context-Aware Reading (Dwell detection on sections)
   useEffect(() => {
     let dwellTimer: ReturnType<typeof setTimeout> | null = null;

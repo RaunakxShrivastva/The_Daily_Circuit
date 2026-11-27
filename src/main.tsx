@@ -12,6 +12,8 @@ import "./styles/miranda.css";
 import "./styles/finite.css";
 /* Web fonts */
 import "./styles/fonts.css";
+/* Botpress AI Inky Newspaper Theme & Pop-up */
+import "./styles/botpress-newspaper.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

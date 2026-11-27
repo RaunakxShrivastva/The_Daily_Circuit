@@ -1,0 +1,193 @@
+/* =============================================================
+   THE DAILY CIRCUIT — BOTPRESS NEWSPAPER THEME & POPUP ANIMATION
+   Authentic Archival Paper Texture · Serif Typography · Ink Accents
+   ============================================================= */
+
+/* 1. Global CSS Variables for Botpress Edge Webchat */
+:root,
+.vdk-edge,
+[data-renderer="published"] {
+  --webchat-color-surface-default: #f7f3e8 !important;
+  --webchat-color-surface-subtle: #ede7d6 !important;
+  --webchat-color-surface-strong: #e2dac7 !important;
+  --webchat-color-text-default: #11100e !important;
+  --webchat-color-text-muted: #6b6255 !important;
+  --webchat-color-border-default: #d5cbaf !important;
+  --webchat-color-border-strong: #2b241c !important;
+  --webchat-composer-background: #ffffff !important;
+  --webchat-transcript-background: #f7f3e8 !important;
+  --webchat-font-family: "IBM Plex Mono", Consolas, monospace !important;
+  --webchat-color-accent: #10b981 !important;
+  --webchat-color-link: #047857 !important;
+}
+
+/* 2. Chat Window Pop-up Animation & Newspaper Texture */
+@keyframes inkyChatPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.86) translateY(24px);
+  }
+  65% {
+    transform: scale(1.02) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Apply Newspaper Paper Texture & Styling to Chat Window */
+.vdk-edge-chat,
+div[data-renderer="published"] > div:not(.vdk-edge-launcher),
+.vdk-edge [role="dialog"],
+.vdk-edge [aria-label*="chat" i] {
+  animation: inkyChatPopIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  transform-origin: bottom right !important;
+  background-color: #f7f3e8 !important;
+  /* Authentic Newspaper Grain + Warm Paper Gradient */
+  background-image: 
+    radial-gradient(#d3c7b4 0.75px, transparent 0.75px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='0.04' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #fcf9f2 0%, #ede7d6 100%) !important;
+  background-size: 14px 14px, 160px 160px, 100% 100% !important;
+  border: 2px solid #2b241c !important;
+  box-shadow: 6px 6px 0px #2b241c, 0 24px 48px -12px rgba(43, 36, 28, 0.35) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+/* 3. Newspaper Masthead / Header Styling */
+.vdk-edge header,
+.vdk-edge-header,
+[data-testid="header"] {
+  background: #ede7d6 !important;
+  border-bottom: 2px solid #2b241c !important;
+  color: #11100e !important;
+  padding: 14px 16px !important;
+}
+
+.vdk-edge-bot-name,
+[data-testid="bot-name"] {
+  font-family: "Bodoni Moda", "Newsreader", Georgia, serif !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #11100e !important;
+  letter-spacing: -0.01em !important;
+}
+
+.vdk-edge-bot-description,
+[data-testid="bot-description"] {
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 10px !important;
+  color: #554e42 !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* 4. Inky Avatar Logo (Replaces default 'IP' circle everywhere) */
+.vdk-edge-avatar,
+[data-testid="bot-avatar"],
+.vdk-edge-header-avatar,
+.vdk-edge-footer-avatar,
+.vdk-edge img[alt*="bot" i],
+.vdk-edge img[alt*="Inky" i] {
+  background-image: url('/inky-avatar.svg') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-color: #181a24 !important;
+  border: 1.5px solid #2b241c !important;
+  border-radius: 50% !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Hide fallback text inside avatar (e.g. 'IP') */
+.vdk-edge-avatar > span,
+.vdk-edge-avatar > div:not(img),
+[data-testid="bot-avatar"] > span {
+  visibility: hidden !important;
+  color: transparent !important;
+}
+
+/* 5. Pre-acquired Starter Question Pills (Editorial Newspaper Tags) */
+.vdk-edge button[data-testid*="starter"],
+.vdk-edge-starters button,
+.vdk-edge-starter {
+  background: #f4eee2 !important;
+  color: #1c1813 !important;
+  border: 1.5px solid #2b241c !important;
+  border-radius: 20px !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 6px 14px !important;
+  margin: 4px !important;
+  transition: all 0.16s ease !important;
+  box-shadow: 2px 2px 0px #2b241c !important;
+  cursor: pointer !important;
+}
+
+.vdk-edge button[data-testid*="starter"]:hover,
+.vdk-edge-starters button:hover,
+.vdk-edge-starter:hover {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 3px 3px 0px #2b241c !important;
+}
+
+/* 6. Newspaper Chat Bubbles */
+/* Inky Bot Messages */
+.vdk-edge-message-bot,
+[data-testid="message-bot"],
+[data-sender="bot"] {
+  background: #ffffff !important;
+  border: 1px solid #d5cbaf !important;
+  color: #11100e !important;
+  font-family: "Newsreader", Georgia, serif !important;
+  font-size: 13.5px !important;
+  line-height: 1.45 !important;
+  border-radius: 12px 12px 12px 3px !important;
+  box-shadow: 1.5px 1.5px 0px rgba(43, 36, 28, 0.1) !important;
+}
+
+/* User Messages */
+.vdk-edge-message-user,
+[data-testid="message-user"],
+[data-sender="user"] {
+  background: #181920 !important;
+  border: 1px solid #000000 !important;
+  color: #ffffff !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 12.5px !important;
+  border-radius: 12px 12px 3px 12px !important;
+  box-shadow: 2px 2px 0px #2b241c !important;
+}
+
+/* 7. Composer / Input Area */
+.vdk-edge textarea,
+.vdk-edge input[type="text"],
+.vdk-edge-composer {
+  background: #ffffff !important;
+  border: 1.5px solid #2b241c !important;
+  border-radius: 10px !important;
+  color: #11100e !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 12px !important;
+}
+
+.vdk-edge textarea:focus,
+.vdk-edge input[type="text"]:focus {
+  outline: none !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
+}
+
+/* 8. Disclaimer: 'You're chatting with Inky' */
+.vdk-edge-disclaimer,
+[data-testid="disclaimer"] {
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 10px !important;
+  color: #554e42 !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  letter-spacing: 0.02em !important;
+}
