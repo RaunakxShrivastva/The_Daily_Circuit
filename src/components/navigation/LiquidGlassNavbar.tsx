@@ -18,6 +18,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     activeTab: string;
     sourceUrl: string | null;
   }>({ open: false, tabs: [], activeTab: "article", sourceUrl: null });
+  const readerOpenRef = useRef(false);
 
   const notchRef = useRef<HTMLElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -181,11 +182,13 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
     const handleReaderState = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.open) {
+        readerOpenRef.current = true;
         setReaderState(detail);
         setActiveState("idle");
         const w = typeof window !== "undefined" ? Math.min(820, window.innerWidth - 56) : 760;
         targetRef.current = { w: Math.max(460, w), h: 48 };
       } else {
+        readerOpenRef.current = false;
         setReaderState((prev) => ({ ...prev, open: false }));
         if (typeof window !== "undefined" && window.scrollY > 30) {
           setActiveState("idle");
@@ -203,7 +206,7 @@ export function LiquidGlassNavbar({ viewMode, onViewChange }: LiquidGlassNavbarP
   // 6. Scroll Tracking: At top -> Collapsed Notch; When scrolled -> Expands into Notch Navbar
   useEffect(() => {
     const handleScroll = () => {
-      if (readerState.open) return;
+      if (readerOpenRef.current) return;
       const scrollY = window.scrollY;
 
       if (scrollY > 30) {

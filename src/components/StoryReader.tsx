@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Story } from '../data/types';
 import { EvidenceDesk, Timeline, AskThisStory, Narration } from './Desk';
 import { findStoryVideo } from '../lib/youtube';
@@ -20,6 +20,9 @@ export function StoryReader({ story, onClose }: { story: Story; onClose: () => v
   const videoSrc = findStoryVideo(story.url ?? '', story.body);
   const visibleTabs = TABS.filter(t => t.id !== 'video' || !!videoSrc);
 
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   // Sync StoryReader controls directly into the top LiquidGlassNavbar Notch (single unified navbar)
   useEffect(() => {
     window.dispatchEvent(
@@ -39,7 +42,7 @@ export function StoryReader({ story, onClose }: { story: Story; onClose: () => v
       const next = (e as CustomEvent<TabId>).detail;
       if (next) setTab(next);
     };
-    const onCloseCmd = () => onClose();
+    const onCloseCmd = () => onCloseRef.current();
 
     window.addEventListener('daily-circuit:reader-tab', onTabCmd);
     window.addEventListener('daily-circuit:reader-close', onCloseCmd);
@@ -50,7 +53,7 @@ export function StoryReader({ story, onClose }: { story: Story; onClose: () => v
         new CustomEvent('daily-circuit:reader-state', { detail: { open: false } })
       );
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div
