@@ -1359,49 +1359,13 @@ export function MirandaNewspaper() {
           <span>SECTION H · CIRCULATION DESK</span>
         </div>
 
-        <section id="page-08" className="miranda-page-section">
-          <div className="miranda-page-edge-tag">PAGE 08 · PRINT</div>
-          <div id="subscribe-section" className="miranda-subscribe-box">
-            <div className="miranda-subscribe-box__inner">
-              <div className="miranda-subscribe-box__text">
-                <span className="miranda-badge-kicker">PHYSICAL &amp; DIGITAL INTELLIGENCE</span>
-                <h3>Read AI News in Real Ink. Delivered Daily.</h3>
-                <p>
-                  Every 24 hours brings a model weight update, an Arxiv breakthrough, or a new repository. 
-                  Subscribe to receive our morning digital edition, or our weekly printed physical broadsheet delivered in an uncreased postal tube.
-                </p>
-              </div>
-
-              <form onSubmit={handleSubscribe} className="miranda-subscribe-form">
-                {subscribed ? (
-                  <div className="subscribed-success">
-                    <CheckCircle2 size={18} /> You are signed up for Edition No. 843 dispatch!
-                  </div>
-                ) : (
-                  <>
-                    <input 
-                      type="email" 
-                      placeholder="Enter your telegraph email address..."
-                      value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
-                      required
-                      className="miranda-input"
-                    />
-                    <button type="submit" className="miranda-btn-stamp">
-                      Subscribe Daily →
-                    </button>
-                  </>
-                )}
-              </form>
-            </div>
+        <section id="page-08" className="miranda-page-section overflow-visible">
+          <div className="miranda-page-edge-tag">PAGE 08 · PRINT &amp; TELEGRAPH</div>
+          
+          {/* Replaced old beige subscribe box with modern Apple Studio Liquid Glass + Mechanical Keyboard */}
+          <div className="w-full my-2">
+            <MacbookScrollDemo />
           </div>
-        </section>
-
-        {/* ========================================================
-            MACBOOK SCROLL ANIMATION (ACETERNITY UI)
-            ======================================================== */}
-        <section id="macbook-showcase" className="w-full my-6 bg-transparent overflow-visible">
-          <MacbookScrollDemo />
         </section>
 
         {/* Colophon & Footer */}

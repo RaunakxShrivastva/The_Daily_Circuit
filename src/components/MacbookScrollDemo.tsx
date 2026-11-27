@@ -81,7 +81,7 @@ export function MacbookScrollDemo() {
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center py-6 sm:py-8 px-4">
       {/* 1. Apple Liquid Glass Display Screen (Motion CloudShader background + macOS controls) */}
-      <div className="w-full max-w-3xl h-[330px] sm:h-[370px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] border border-white/20 relative backdrop-blur-md">
+      <div className="w-full max-w-3xl min-h-[420px] sm:min-h-[460px] h-auto rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] border border-white/20 relative backdrop-blur-md">
         <LiquidGlassScreen
           email={email}
           setEmail={setEmail}
